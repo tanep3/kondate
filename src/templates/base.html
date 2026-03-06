@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Kondate - 献立管理システム{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <h1><a href="/">🍽️ Kondate</a></h1>
+            <nav class="main-nav">
+                <a href="/">🏠 献立一覧</a>
+                <a href="/calendar">📅 カレンダー</a>
+                <a href="/admin">⚙️ 管理</a>
+                <a href="/dishes/new" class="btn-primary">➕ 新規作成</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="{{ url_for('static', path='/js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+
+    <footer>
+        <p>&copy; 2026 Kondate - 献立管理システム by Tane Channel Technology</p>
+    </footer>
+</body>
+</html>

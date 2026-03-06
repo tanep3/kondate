@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "献立を編集" if dish_id else "献立を新規作成" }} - Kondate{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h2>{{ "献立を編集" if dish_id else "献立を新規作成" }}</h2>
+        <a href="/" class="btn-secondary">← 戻る</a>
+    </div>
+
+    <form id="dishForm" class="dish-form">
+        <input type="hidden" id="dishId" value="{{ dish_id or '' }}">
+
+        <!-- 基本情報 -->
+        <section class="form-section">
+            <h3>基本情報</h3>
+
+            <div class="form-group">
+                <label for="name">献立名 *</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="type">献立タイプ *</label>
+                    <select id="type" name="type" required>
+                        <option value="">選択してください</option>
+                        <option value="main">主菜</option>
+                        <option value="side">副菜</option>
+                        <option value="soup">汁物</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="difficulty">難易度</label>
+                    <select id="difficulty" name="difficulty">
+                        <option value="">選択してください</option>
+                        <option value="easy">簡単</option>
+                        <option value="medium">普通</option>
+                        <option value="hard">難しい</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="prep_time">調理時間（分）</label>
+                    <input type="number" id="prep_time" name="prep_time" min="1">
+                </div>
+
+                <div class="form-group">
+                    <label for="servings">人数 *</label>
+                    <input type="number" id="servings" name="servings" value="2" min="1" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="description">説明</label>
+                <textarea id="description" name="description" rows="3"></textarea>
+            </div>
+        </section>
+
+        <!-- 栄養情報（1人前あたり） -->
+        <section class="form-section">
+            <h3>栄養情報（1人前あたり）</h3>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="calories">カロリー（kcal）</label>
+                    <input type="number" id="calories" name="calories" step="0.1" min="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="protein">タンパク質（g）</label>
+                    <input type="number" id="protein" name="protein" step="0.1" min="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="fat">脂質（g）</label>
+                    <input type="number" id="fat" name="fat" step="0.1" min="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="sodium">塩分（g）</label>
+                    <input type="number" id="sodium" name="sodium" step="0.1" min="0">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="good_for_brain_health" name="good_for_brain_health">
+                    <span>血栓の病気に良い献立</span>
+                </label>
+            </div>
+        </section>
+
+        <!-- レシピ情報 -->
+        <section class="form-section">
+            <h3>レシピ情報</h3>
+
+            <div class="form-group">
+                <label>調理手順</label>
+                <div id="steps-container"></div>
+                <button type="button" id="add-step" class="btn-small">+ 手順を追加</button>
+            </div>
+
+            <div class="form-group">
+                <label for="tips">コツ・ポイント</label>
+                <textarea id="tips" name="tips" rows="2"></textarea>
+            </div>
+        </section>
+
+        <!-- 材料 -->
+        <section class="form-section">
+            <h3>材料（{{ "指定の人数分" if not dish_id else "指定の人数分" }}）</h3>
+            <div id="ingredients-container"></div>
+            <button type="button" id="add-ingredient" class="btn-small">+ 材料を追加</button>
+        </section>
+
+        <!-- タグ -->
+        <section class="form-section">
+            <h3>タグ</h3>
+            <div class="form-group">
+                <label for="tags">タグ（カンマ区切り）</label>
+                <input type="text" id="tags" name="tags" placeholder="例: 簡単,魚介類,血栓の病気に良い">
+                <small>既存のタグ: 魚介類, 簡単, 血栓の病気に良い, 汁物, 温かい, 揚げ物, 楽しい食事</small>
+            </div>
+        </section>
+
+        <!-- ボタン -->
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">{{ "更新" if dish_id else "登録" }}</button>
+            <a href="/" class="btn-secondary">キャンセル</a>
+        </div>
+    </form>
+</div>
+
+<script>
+const dishId = document.getElementById('dishId').value;
+let steps = [];
+let ingredients = [];
+
+// 手順を追加
+function addStep(stepText = '') {
+    const container = document.getElementById('steps-container');
+    const index = steps.length;
+
+    const stepDiv = document.createElement('div');
+    stepDiv.className = 'step-item';
+    stepDiv.innerHTML = `
+        <div class="step-number">${index + 1}</div>
+        <textarea class="step-text" rows="2" data-index="${index}">${stepText}</textarea>
+        <button type="button" class="btn-remove" onclick="removeStep(${index})">削除</button>
+    `;
+
+    container.appendChild(stepDiv);
+    steps.push(stepText);
+}
+
+// 手順を削除
+function removeStep(index) {
+    steps.splice(index, 1);
+    renderSteps();
+}
+
+// 手順を再描画
+function renderSteps() {
+    const container = document.getElementById('steps-container');
+    container.innerHTML = '';
+
+    steps.forEach((step, index) => {
+        const stepDiv = document.createElement('div');
+        stepDiv.className = 'step-item';
+        stepDiv.innerHTML = `
+            <div class="step-number">${index + 1}</div>
+            <textarea class="step-text" rows="2" data-index="${index}">${step}</textarea>
+            <button type="button" class="btn-remove" onclick="removeStep(${index})">削除</button>
+        `;
+        container.appendChild(stepDiv);
+    });
+}
+
+// 材料を追加
+function addIngredient(name = '', amount = '') {
+    const container = document.getElementById('ingredients-container');
+    const index = ingredients.length;
+
+    const ingredientDiv = document.createElement('div');
+    ingredientDiv.className = 'ingredient-item';
+    ingredientDiv.innerHTML = `
+        <input type="text" class="ingredient-name" placeholder="材料名" value="${name}" data-index="${index}">
+        <input type="text" class="ingredient-amount" placeholder="分量" value="${amount}" data-index="${index}">
+        <button type="button" class="btn-remove" onclick="removeIngredient(${index})">削除</button>
+    `;
+
+    container.appendChild(ingredientDiv);
+    ingredients.push({ name, amount });
+}
+
+// 材料を削除
+function removeIngredient(index) {
+    ingredients.splice(index, 1);
+    renderIngredients();
+}
+
+// 材料を再描画
+function renderIngredients() {
+    const container = document.getElementById('ingredients-container');
+    container.innerHTML = '';
+
+    ingredients.forEach((ing, index) => {
+        const ingredientDiv = document.createElement('div');
+        ingredientDiv.className = 'ingredient-item';
+        ingredientDiv.innerHTML = `
+            <input type="text" class="ingredient-name" placeholder="材料名" value="${ing.name}" data-index="${index}">
+            <input type="text" class="ingredient-amount" placeholder="分量" value="${ing.amount}" data-index="${index}">
+            <button type="button" class="btn-remove" onclick="removeIngredient(${index})">削除</button>
+        `;
+        container.appendChild(ingredientDiv);
+    });
+}
+
+// イベントリスナー
+document.getElementById('add-step').addEventListener('click', () => addStep());
+document.getElementById('add-ingredient').addEventListener('click', () => addIngredient());
+
+// フォーム送信
+document.getElementById('dishForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // 手順を収集
+    const stepTextareas = document.querySelectorAll('.step-text');
+    steps = Array.from(stepTextareas).map(ta => ta.value).filter(s => s.trim());
+
+    // 材料を収集
+    const ingredientNames = document.querySelectorAll('.ingredient-name');
+    const ingredientAmounts = document.querySelectorAll('.ingredient-amount');
+    ingredients = [];
+    ingredientNames.forEach((nameInput, i) => {
+        const name = nameInput.value.trim();
+        const amount = ingredientAmounts[i].value.trim();
+        if (name) {
+            ingredients.push({ name, amount: amount || '' });
+        }
+    });
+
+    // タグをパース
+    const tagsInput = document.getElementById('tags').value;
+    const tags = tagsInput.split(',').map(t => t.trim()).filter(t => t);
+
+    const formData = {
+        name: document.getElementById('name').value,
+        type: document.getElementById('type').value,
+        description: document.getElementById('description').value || null,
+        difficulty: document.getElementById('difficulty').value || null,
+        prep_time: parseInt(document.getElementById('prep_time').value) || null,
+        servings: parseInt(document.getElementById('servings').value) || 2,
+        calories: parseFloat(document.getElementById('calories').value) || null,
+        protein: parseFloat(document.getElementById('protein').value) || null,
+        fat: parseFloat(document.getElementById('fat').value) || null,
+        sodium: parseFloat(document.getElementById('sodium').value) || null,
+        good_for_brain_health: document.getElementById('good_for_brain_health').checked,
+        recipe: {
+            steps: steps.length > 0 ? steps : null,
+            tips: document.getElementById('tips').value || null
+        },
+        ingredients: ingredients.length > 0 ? ingredients : [],
+        tags: tags.length > 0 ? tags : []
+    };
+
+    try {
+        const url = dishId ? `/api/dishes/${dishId}` : '/api/dishes';
+        const method = dishId ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        window.location.href = `/dishes/${result.id}`;
+    } catch (error) {
+        alert(`エラー: ${error.message}`);
+    }
+});
+
+// 既存の献立データを読み込む
+async function loadDishData() {
+    if (!dishId) return;
+
+    try {
+        const response = await fetch(`/api/dishes/${dishId}`);
+        if (!response.ok) throw new Error('Failed to load dish');
+
+        const dish = await response.json();
+
+        // 基本情報
+        document.getElementById('name').value = dish.name;
+        document.getElementById('type').value = dish.type;
+        document.getElementById('description').value = dish.description || '';
+        document.getElementById('difficulty').value = dish.difficulty || '';
+        document.getElementById('prep_time').value = dish.prep_time || '';
+        document.getElementById('servings').value = dish.servings || 2;
+
+        // 栄養情報
+        document.getElementById('calories').value = dish.calories || '';
+        document.getElementById('protein').value = dish.protein || '';
+        document.getElementById('fat').value = dish.fat || '';
+        document.getElementById('sodium').value = dish.sodium || '';
+        document.getElementById('good_for_brain_health').checked = dish.good_for_brain_health;
+
+        // レシピ情報
+        if (dish.recipe) {
+            if (dish.recipe.steps) {
+                dish.recipe.steps.forEach(step => addStep(step));
+            }
+            document.getElementById('tips').value = dish.recipe.tips || '';
+        }
+
+        // 材料
+        if (dish.ingredients) {
+            dish.ingredients.forEach(ing => addIngredient(ing.ingredient.name, ing.amount));
+        }
+
+        // タグ
+        if (dish.tags) {
+            const tagNames = dish.tags.map(t => t.name).join(', ');
+            document.getElementById('tags').value = tagNames;
+        }
+    } catch (error) {
+        console.error('Error loading dish:', error);
+        alert('献立データの読み込みに失敗しました');
+    }
+}
+
+// 初期化
+loadDishData();
+</script>
+{% endblock %}

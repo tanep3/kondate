@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}{{ dish.name }} - Kondate{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <a href="/" class="btn-secondary">← 戻る</a>
+        <div class="header-actions">
+            <a href="/dishes/{{ dish.id }}/edit" class="btn-primary">編集</a>
+            <button id="delete-btn" class="btn-danger" onclick="confirmDelete({{ dish.id }})">削除</button>
+        </div>
+    </div>
+
+    <div class="dish-detail">
+        <h1>{{ dish.name }}</h1>
+
+        <div class="dish-meta">
+            <span class="dish-badge type-{{ dish.type }}">{{ dish.type|type_label }}</span>
+            {% if dish.difficulty %}
+            <span class="dish-badge">{{ dish.difficulty|difficulty_label }}</span>
+            {% endif %}
+            {% if dish.prep_time %}
+            <span class="dish-badge">⏱️ {{ dish.prep_time }}分</span>
+            {% endif %}
+        </div>
+
+        {% if dish.good_for_brain_health %}
+        <p class="good-for-brain">✓ 血栓の病気に良い</p>
+        {% endif %}
+
+        {% if dish.description %}
+        <div class="description-section">
+            <h3>説明</h3>
+            <p class="description">{{ dish.description }}</p>
+        </div>
+        <hr class="section-divider">
+        {% endif %}
+
+        <div class="recipe-info-section">
+            <h3>レシピ情報</h3>
+            <p class="servings-info">👥 {{ dish.servings }}人前</p>
+        </div>
+        <hr class="section-divider">
+
+        <div class="nutrition-section">
+            <h3>栄養情報（1人前あたり）</h3>
+            <div class="nutrition-grid">
+                {% if dish.calories is not none %}
+                <div class="nutrition-item">
+                    <span class="label">カロリー</span>
+                    <span class="value">{{ dish.calories }}kcal</span>
+                </div>
+                {% endif %}
+                {% if dish.protein is not none %}
+                <div class="nutrition-item">
+                    <span class="label">タンパク質</span>
+                    <span class="value">{{ dish.protein }}g</span>
+                </div>
+                {% endif %}
+                {% if dish.fat is not none %}
+                <div class="nutrition-item">
+                    <span class="label">脂質</span>
+                    <span class="value">{{ dish.fat }}g</span>
+                </div>
+                {% endif %}
+                {% if dish.sodium is not none %}
+                <div class="nutrition-item">
+                    <span class="label">塩分</span>
+                    <span class="value">{{ dish.sodium }}g</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if dish.recipe %}
+        <hr class="section-divider">
+
+        <div class="recipe-section">
+            <h3>レシピ</h3>
+
+            {% if dish.recipe.ingredients or dish.ingredients %}
+            <div class="ingredients-list">
+                <h4>材料</h4>
+                <ul>
+                    {% if dish.ingredients %}
+                    {% for ing in dish.ingredients %}
+                    <li>{{ ing.amount }} {{ ing.ingredient.name if ing.ingredient else '' }}</li>
+                    {% endfor %}
+                    {% endif %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if dish.recipe.steps %}
+            <div class="steps-list">
+                <h4>調理手順</h4>
+                <ol>
+                    {% for step in dish.recipe.steps %}
+                    <li>{{ step }}</li>
+                    {% endfor %}
+                </ol>
+            </div>
+            {% endif %}
+
+            {% if dish.recipe.tips %}
+            <div class="tips-box">
+                <h4>コツ・ヒント</h4>
+                <p>{{ dish.recipe.tips }}</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if dish.tags and dish.tags|length > 0 %}
+        <hr class="section-divider">
+
+        <div class="tags-section">
+            <h3>タグ</h3>
+            <div class="dish-tags">
+                {% for tag in dish.tags %}
+                <span class="tag">#{{ tag.name }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+// 献立削除確認
+function confirmDelete(dishId) {
+    if (confirm('本当にこの献立を削除しますか？\n\nこの操作は取り消せません。')) {
+        deleteDish(dishId);
+    }
+}
+
+// 献立削除処理
+async function deleteDish(dishId) {
+    try {
+        const response = await fetch(`/api/dishes/${dishId}`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) {
+            throw new Error('削除に失敗しました');
+        }
+
+        alert('献立を削除しました');
+        window.location.href = '/';
+    } catch (error) {
+        alert('エラー: ' + error.message);
+    }
+}
+
+// TODO: 関連献立を表示
+</script>
+{% endblock %}

@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}献立一覧 - Kondate{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h2>献立一覧</h2>
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="🔍 献立名や食材で検索...">
+            <button id="search-button" class="btn-secondary">検索</button>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-type="all">すべて</button>
+        <button class="tab" data-type="main">主菜</button>
+        <button class="tab" data-type="side">副菜</button>
+        <button class="tab" data-type="soup">汁物</button>
+        <button class="tab" data-type="brain">血栓の病気に良い</button>
+    </div>
+
+    <div class="dishes-grid" id="dishes-grid">
+        <!-- 献立カードがここに表示されます -->
+        <div class="empty-state">
+            <p>🍽️ 読み込み中...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentType = 'all';
+
+// ページ読み込み時に献立一覧を取得
+document.addEventListener('DOMContentLoaded', function() {
+    loadDishes();
+});
+
+// 献立一覧を取得
+async function loadDishes(type = 'all') {
+    currentType = type;
+
+    try {
+        const params = {};
+        if (type !== 'all') {
+            if (type === 'brain') {
+                params.good_for_brain_health = 'true';
+            } else {
+                params.type = type;
+            }
+        }
+
+        const response = await api.getDishes(params);
+        // レスポンス構造を修正
+        const items = response.data ? response.data.items : response.items || [];
+        displayDishes(items);
+    } catch (error) {
+        console.error('Failed to load dishes:', error);
+        document.getElementById('dishes-grid').innerHTML = `
+            <div class="empty-state">
+                <p>読み込みに失敗しました</p>
+                <button onclick="loadDishes('${currentType}')" class="btn-primary">再読み込み</button>
+            </div>
+        `;
+    }
+}
+
+// 献立カードを表示
+function displayDishes(dishes, showSimilarity = false) {
+    const grid = document.getElementById('dishes-grid');
+
+    if (!dishes || dishes.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state">
+                <p>🍽️ 献立がまだ登録されていません</p>
+                <a href="/dishes/new" class="btn-primary">最初の献立を登録する</a>
+            </div>
+        `;
+        return;
+    }
+
+    grid.innerHTML = dishes.map(dish => `
+        <div class="dish-card" onclick="location.href='/dishes/${dish.id}'">
+            ${showSimilarity && dish.similarity !== undefined ? `
+                <div class="similarity-badge">類似度: ${(dish.similarity * 100).toFixed(0)}%</div>
+            ` : ''}
+            <h3>${escapeHtml(dish.name)}</h3>
+            <div class="dish-meta">
+                <span class="dish-badge type-${dish.type}">${getTypeLabel(dish.type)}</span>
+                ${dish.difficulty ? `<span class="dish-badge">${getDifficultyLabel(dish.difficulty)}</span>` : ''}
+                ${dish.prep_time ? `<span class="dish-badge">⏱️ ${dish.prep_time}分</span>` : ''}
+            </div>
+            ${dish.good_for_brain_health ? '<p class="good-for-brain">✓ 血栓の病気に良い</p>' : ''}
+            <div class="dish-nutrition">
+                ${dish.calories ? `<div class="nutrition-item">🔥 ${dish.calories}kcal</div>` : ''}
+                ${dish.protein ? `<div class="nutrition-item">💪 ${dish.protein}g</div>` : ''}
+                ${dish.sodium ? `<div class="nutrition-item">🧂 ${dish.sodium}g</div>` : ''}
+            </div>
+            ${dish.tags && dish.tags.length > 0 ? `
+                <div class="dish-tags">
+                    ${dish.tags.map(tag => `<span class="tag">#${escapeHtml(tag.name)}</span>`).join('')}
+                </div>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+// タブ切り替え
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        loadDishes(this.dataset.type);
+    });
+});
+
+// 検索機能
+let searchTimeout;
+document.getElementById('search-input').addEventListener('input', function(e) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        performSearch(e.target.value);
+    }, 500);
+});
+
+document.getElementById('search-button').addEventListener('click', function() {
+    const query = document.getElementById('search-input').value;
+    performSearch(query);
+});
+
+async function performSearch(query) {
+    if (!query.trim()) {
+        loadDishes(currentType);
+        return;
+    }
+
+    try {
+        // 検索時も献立タイプフィルタを適用
+        let url = `/api/search/dishes?q=${encodeURIComponent(query)}`;
+        if (currentType !== 'all') {
+            if (currentType === 'brain') {
+                url += `&good_for_brain_health=true`;
+            } else {
+                url += `&type=${currentType}`;
+            }
+        }
+        const response = await fetch(url);
+        const data = await response.json();
+        displayDishes(data.items, true);  // 検索結果は類似度を表示
+    } catch (error) {
+        console.error('Search failed:', error);
+    }
+}
+
+// ユーティリティ関数
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function getTypeLabel(type) {
+    const labels = {
+        'main': '主菜',
+        'side': '副菜',
+        'soup': '汁物'
+    };
+    return labels[type] || type;
+}
+
+function getDifficultyLabel(difficulty) {
+    const labels = {
+        'easy': '簡単',
+        'medium': '普通',
+        'hard': '難しい'
+    };
+    return labels[difficulty] || difficulty;
+}
+</script>
+{% endblock %}
