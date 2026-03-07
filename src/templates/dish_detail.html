@@ -125,10 +125,102 @@
         </div>
         {% endif %}
     </div>
+
+    {% if dish.tags and dish.tags|length > 0 %}
+    <hr class="section-divider">
+
+    <div class="related-dishes-section">
+        <h3>関連献立</h3>
+        <div id="related-dishes-grid" class="dishes-grid">
+            <p>読み込み中...</p>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
 {% block scripts %}
 <script>
+// 関連献立をロード
+async function loadRelatedDishes() {
+    const tags = [{% for tag in dish.tags %}"{{ tag.name }}",{% endfor %}];
+    
+    if (tags.length === 0) {
+        document.getElementById('related-dishes-grid').innerHTML = '<p>関連献立がありません</p>';
+        return;
+    }
+    
+    try {
+        // タグで検索
+        const query = tags.map(t => `#${t}`).join(' ');
+        const response = await fetch(`/api/search/dishes?q=${encodeURIComponent(query)}&limit=6`);
+        const data = await response.json();
+        
+        // 現在の献立を除外
+        const relatedDishes = data.items.filter(d => d.id !== {{ dish.id }});
+        
+        if (relatedDishes.length === 0) {
+            document.getElementById('related-dishes-grid').innerHTML = '<p>関連献立がありません</p>';
+            return;
+        }
+        
+        // 関連献立を表示
+        const grid = document.getElementById('related-dishes-grid');
+        grid.innerHTML = relatedDishes.map(dish => `
+            <div class="dish-card" onclick="window.location.href='/dishes/${dish.id}'" style="cursor: pointer;">
+                <div class="dish-card-header">
+                    <h3>${escapeHtml(dish.name)}</h3>
+                    <span class="dish-badge type-${dish.type}">${getTypeLabel(dish.type)}</span>
+                </div>
+                ${dish.description ? `<p class="dish-description">${escapeHtml(dish.description)}</p>` : ''}
+                <div class="dish-meta">
+                    ${dish.difficulty ? `<span class="dish-meta-item">${getDifficultyLabel(dish.difficulty)}</span>` : ''}
+                    ${dish.prep_time ? `<span class="dish-meta-item">⏱️ ${dish.prep_time}分</span>` : ''}
+                </div>
+                <div class="dish-nutrition">
+                    ${dish.calories ? `<div class="nutrition-item">🔥 ${dish.calories}kcal</div>` : ''}
+                    ${dish.protein ? `<div class="nutrition-item">💪 ${dish.protein}g</div>` : ''}
+                    ${dish.sodium ? `<div class="nutrition-item">🧂 ${dish.sodium}g</div>` : ''}
+                </div>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Failed to load related dishes:', error);
+        document.getElementById('related-dishes-grid').innerHTML = '<p>関連献立の読み込みに失敗しました</p>';
+    }
+}
+
+// ユーティリティ関数
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function getTypeLabel(type) {
+    const labels = {
+        'main': '主菜',
+        'side': '副菜',
+        'soup': '汁物',
+        'staple': '主食',
+        'dessert': 'デザート'
+    };
+    return labels[type] || type;
+}
+
+function getDifficultyLabel(difficulty) {
+    const labels = {
+        'easy': '簡単',
+        'medium': '普通',
+        'hard': '難しい'
+    };
+    return labels[difficulty] || difficulty;
+}
+
+// ページ読み込み時に関連献立をロード
+document.addEventListener('DOMContentLoaded', function() {
+    loadRelatedDishes();
+});
 // 献立削除確認
 function confirmDelete(dishId) {
     if (confirm('本当にこの献立を削除しますか？\n\nこの操作は取り消せません。')) {

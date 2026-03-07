@@ -247,7 +247,7 @@ document.getElementById('dishForm').addEventListener('submit', async (e) => {
 
     // タグをパース
     const tagsInput = document.getElementById('tags').value;
-    const tags = tagsInput.split(',').map(t => t.trim()).filter(t => t);
+    const tags = tagsInput.split(/[,、]/).map(t => t.trim()).filter(t => t);
 
     const formData = {
         name: document.getElementById('name').value,

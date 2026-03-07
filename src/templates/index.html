@@ -45,7 +45,7 @@ async function loadDishes(type = 'all') {
     currentType = type;
 
     try {
-        const params = {};
+        const params = { limit: 30 };
         if (type !== 'all') {
             if (type === 'brain') {
                 params.good_for_brain_health = 'true';
@@ -102,7 +102,7 @@ function displayDishes(dishes, showSimilarity = false) {
             </div>
             ${dish.tags && dish.tags.length > 0 ? `
                 <div class="dish-tags">
-                    ${dish.tags.map(tag => `<span class="tag">#${escapeHtml(tag.name)}</span>`).join('')}
+                    ${dish.tags.map(tag => `<span class="tag clickable-tag" data-tag="${escapeHtml(tag.name)}">#${escapeHtml(tag.name)}</span>`).join('')}
                 </div>
             ` : ''}
         </div>
@@ -140,7 +140,7 @@ async function performSearch(query) {
 
     try {
         // 検索時も献立タイプフィルタを適用
-        let url = `/api/search/dishes?q=${encodeURIComponent(query)}`;
+        let url = `/api/search/dishes?q=${encodeURIComponent(query)}&limit=30`;
         if (currentType !== 'all') {
             if (currentType === 'brain') {
                 url += `&good_for_brain_health=true`;
@@ -155,6 +155,15 @@ async function performSearch(query) {
         console.error('Search failed:', error);
     }
 }
+
+// タグクリックイベント（イベント委譲）
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('clickable-tag')) {
+        const tag = e.target.dataset.tag;
+        document.getElementById('search-input').value = `#${tag}`;
+        performSearch(`#${tag}`);
+    }
+});
 
 // ユーティリティ関数
 function escapeHtml(text) {

@@ -51,8 +51,17 @@ def regenerate_chroma():
 
         ingredient_names = [di.ingredient.name for di in dish_ingredients]
 
-        # ドキュメントを作成（献立名 + 説明 + 食材）
-        document = f"{dish.name}: {dish.description or ''}. 食材: {', '.join(ingredient_names)}"
+        # タグを取得（DishTag経由）
+        from src.models.dish_tag import DishTag
+
+        dish_tags = db.query(DishTag).filter(
+            DishTag.dish_id == dish.id
+        ).all()
+
+        tag_names = [dt.tag.name for dt in dish_tags]
+
+        # ドキュメントを作成（献立名 + 説明 + 食材 + タグ）
+        document = f"{dish.name}: {dish.description or ''}. 食材: {', '.join(ingredient_names)}. タグ: {', '.join(tag_names)}"
 
         # メタデータを作成
         metadata = {

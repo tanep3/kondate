@@ -17,16 +17,22 @@ router = APIRouter(prefix="/api/search", tags=["search"])
 @router.get("/dishes")
 def search_dishes(
     q: str = Query(..., description="検索クエリ"),
+    limit: int = Query(50, ge=1, le=100, description="返却数"),
     type: str = Query(None, description="献立タイプでフィルタ"),
     good_for_brain_health: bool = Query(None, description="血栓の病気に良いかでフィルタ"),
     db: Session = Depends(get_db)
 ):
     """
     献立名で検索
+
+    - **q**: 検索クエリ
+    - **limit**: 返却数（1-100）
+    - **type**: 献立タイプフィルタ
+    - **good_for_brain_health**: 血栓の病気に良いかでフィルタ
     """
     # TODO: 今回はChromaDB検索に流用
     service = SearchService(db)
-    results = service.search_by_ingredients(q, n_results=50, dish_type=type, good_for_brain_health=good_for_brain_health)
+    results = service.search_by_ingredients(q, n_results=limit, dish_type=type, good_for_brain_health=good_for_brain_health)
 
     items = []
     for dish, similarity in results:
