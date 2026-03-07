@@ -1,0 +1,484 @@
+{% extends "base.html" %}
+
+{% block title %}管理 - 献立システム{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h1>⚙️ 管理</h1>
+</div>
+
+<div class="admin-tabs">
+    <button class="admin-tab active" data-tab="ingredients">食材管理</button>
+    <button class="admin-tab" data-tab="tags">タグ管理</button>
+</div>
+
+<div id="ingredients-tab" class="admin-tab-content active">
+    <div class="admin-section">
+        <div class="admin-section-header">
+            <h2>食材一覧</h2>
+            <button id="add-ingredient-btn" class="btn btn-primary">+ 食材を追加</button>
+        </div>
+        <div id="ingredients-list" class="admin-list">
+            <!-- JavaScriptで生成 -->
+        </div>
+    </div>
+</div>
+
+<div id="tags-tab" class="admin-tab-content">
+    <div class="admin-section">
+        <div class="admin-section-header">
+            <h2>タグ一覧</h2>
+            <button id="add-tag-btn" class="btn btn-primary">+ タグを追加</button>
+        </div>
+        <div id="tags-list" class="admin-list">
+            <!-- JavaScriptで生成 -->
+        </div>
+    </div>
+</div>
+
+<!-- 食材追加/編集ダイアログ -->
+<div id="ingredient-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="ingredient-modal-title">食材を追加</h3>
+            <span class="modal-close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="ingredient-form">
+                <input type="hidden" id="ingredient-id">
+
+                <div class="form-group">
+                    <label for="ingredient-name">食材名</label>
+                    <input type="text" id="ingredient-name" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="ingredient-unit">単位</label>
+                    <input type="text" id="ingredient-unit" class="form-control" placeholder="例: g、個、大さじ">
+                </div>
+
+                <div class="form-group">
+                    <label for="ingredient-epa">EPA (mg/100g)</label>
+                    <input type="number" id="ingredient-epa" class="form-control" step="0.1" min="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="ingredient-dha">DHA (mg/100g)</label>
+                    <input type="number" id="ingredient-dha" class="form-control" step="0.1" min="0">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary modal-close-btn">キャンセル</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- タグ追加/編集ダイアログ -->
+<div id="tag-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="tag-modal-title">タグを追加</h3>
+            <span class="modal-close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="tag-form">
+                <input type="hidden" id="tag-id">
+
+                <div class="form-group">
+                    <label for="tag-name">タグ名</label>
+                    <input type="text" id="tag-name" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="tag-color">色</label>
+                    <input type="color" id="tag-color" class="form-control" value="#007bff">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary modal-close-btn">キャンセル</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-header {
+    margin-bottom: 2rem;
+}
+
+.admin-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.admin-tab {
+    padding: 10px 20px;
+    background: var(--card-bg);
+    border: none;
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s;
+}
+
+.admin-tab:hover {
+    background: var(--hover-bg);
+}
+
+.admin-tab.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.admin-tab-content {
+    display: none;
+}
+
+.admin-tab-content.active {
+    display: block;
+}
+
+.admin-section {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+}
+
+.admin-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.admin-list {
+    display: grid;
+    gap: 8px;
+}
+
+.admin-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--secondary-bg);
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.admin-item:hover {
+    background: var(--hover-bg);
+}
+
+.admin-item-info {
+    flex: 1;
+}
+
+.admin-item-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.admin-item-details {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.admin-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.admin-item-actions button {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+}
+
+.input[type="color"] {
+    height: 40px;
+    padding: 2px;
+}
+</style>
+
+<script>
+// タブ切り替え
+document.querySelectorAll('.admin-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        // 全タブのactiveクラスを削除
+        document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
+
+        // クリックしたタブをactiveに
+        tab.classList.add('active');
+        const tabName = tab.dataset.tab;
+        document.getElementById(`${tabName}-tab`).classList.add('active');
+    });
+});
+
+// 食材管理
+let ingredients = [];
+
+async function loadIngredients() {
+    try {
+        const response = await fetch('/api/ingredients');
+        const data = await response.json();
+        ingredients = data.items;
+        renderIngredients();
+    } catch (error) {
+        console.error('Failed to load ingredients:', error);
+    }
+}
+
+function renderIngredients() {
+    const list = document.getElementById('ingredients-list');
+    list.innerHTML = '';
+
+    ingredients.forEach(ingredient => {
+        const item = document.createElement('div');
+        item.className = 'admin-item';
+        
+        const details = [];
+        if (ingredient.unit) details.push(`単位: ${ingredient.unit}`);
+        if (ingredient.epa) details.push(`EPA: ${ingredient.epa}mg`);
+        if (ingredient.dha) details.push(`DHA: ${ingredient.dha}mg`);
+        
+        item.innerHTML = `
+            <div class="admin-item-info">
+                <div class="admin-item-name">${ingredient.name}</div>
+                <div class="admin-item-details">${details.join(' | ') || '詳細なし'}</div>
+            </div>
+            <div class="admin-item-actions">
+                <button class="btn btn-secondary" onclick="editIngredient(${ingredient.id})">編集</button>
+                <button class="btn btn-danger" onclick="deleteIngredient(${ingredient.id})">削除</button>
+            </div>
+        `;
+        
+        list.appendChild(item);
+    });
+}
+
+const ingredientModal = document.getElementById('ingredient-modal');
+const ingredientForm = document.getElementById('ingredient-form');
+
+document.getElementById('add-ingredient-btn').addEventListener('click', () => {
+    document.getElementById('ingredient-modal-title').textContent = '食材を追加';
+    document.getElementById('ingredient-id').value = '';
+    document.getElementById('ingredient-name').value = '';
+    document.getElementById('ingredient-unit').value = '';
+    document.getElementById('ingredient-epa').value = '';
+    document.getElementById('ingredient-dha').value = '';
+    ingredientModal.style.display = 'block';
+});
+
+window.editIngredient = function(id) {
+    const ingredient = ingredients.find(i => i.id === id);
+    if (!ingredient) return;
+
+    document.getElementById('ingredient-modal-title').textContent = '食材を編集';
+    document.getElementById('ingredient-id').value = ingredient.id;
+    document.getElementById('ingredient-name').value = ingredient.name;
+    document.getElementById('ingredient-unit').value = ingredient.unit || '';
+    document.getElementById('ingredient-epa').value = ingredient.epa || '';
+    document.getElementById('ingredient-dha').value = ingredient.dha || '';
+    ingredientModal.style.display = 'block';
+};
+
+window.deleteIngredient = async function(id) {
+    if (!confirm('本当に削除しますか？')) return;
+
+    try {
+        const response = await fetch(`/api/ingredients/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            await loadIngredients();
+        } else {
+            alert('削除に失敗しました');
+        }
+    } catch (error) {
+        console.error('Failed to delete ingredient:', error);
+        alert('削除に失敗しました');
+    }
+};
+
+ingredientForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const id = document.getElementById('ingredient-id').value;
+    const data = {
+        name: document.getElementById('ingredient-name').value,
+        unit: document.getElementById('ingredient-unit').value || null,
+        epa: parseFloat(document.getElementById('ingredient-epa').value) || null,
+        dha: parseFloat(document.getElementById('ingredient-dha').value) || null
+    };
+
+    try {
+        const url = id ? `/api/ingredients/${id}` : '/api/ingredients';
+        const method = id ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            ingredientModal.style.display = 'none';
+            await loadIngredients();
+        } else {
+            alert('保存に失敗しました');
+        }
+    } catch (error) {
+        console.error('Failed to save ingredient:', error);
+        alert('保存に失敗しました');
+    }
+});
+
+// タグ管理
+let tags = [];
+
+async function loadTags() {
+    try {
+        const response = await fetch('/api/tags');
+        const data = await response.json();
+        tags = data.items;
+        renderTags();
+    } catch (error) {
+        console.error('Failed to load tags:', error);
+    }
+}
+
+function renderTags() {
+    const list = document.getElementById('tags-list');
+    list.innerHTML = '';
+
+    tags.forEach(tag => {
+        const item = document.createElement('div');
+        item.className = 'admin-item';
+        
+        item.innerHTML = `
+            <div class="admin-item-info">
+                <div class="admin-item-name">
+                    <span class="tag-badge" style="background: ${tag.color}">${tag.name}</span>
+                </div>
+            </div>
+            <div class="admin-item-actions">
+                <button class="btn btn-secondary" onclick="editTag(${tag.id})">編集</button>
+                <button class="btn btn-danger" onclick="deleteTag(${tag.id})">削除</button>
+            </div>
+        `;
+        
+        list.appendChild(item);
+    });
+}
+
+const tagModal = document.getElementById('tag-modal');
+const tagForm = document.getElementById('tag-form');
+
+document.getElementById('add-tag-btn').addEventListener('click', () => {
+    document.getElementById('tag-modal-title').textContent = 'タグを追加';
+    document.getElementById('tag-id').value = '';
+    document.getElementById('tag-name').value = '';
+    document.getElementById('tag-color').value = '#007bff';
+    tagModal.style.display = 'block';
+});
+
+window.editTag = function(id) {
+    const tag = tags.find(t => t.id === id);
+    if (!tag) return;
+
+    document.getElementById('tag-modal-title').textContent = 'タグを編集';
+    document.getElementById('tag-id').value = tag.id;
+    document.getElementById('tag-name').value = tag.name;
+    document.getElementById('tag-color').value = tag.color;
+    tagModal.style.display = 'block';
+};
+
+window.deleteTag = async function(id) {
+    if (!confirm('本当に削除しますか？')) return;
+
+    try {
+        const response = await fetch(`/api/tags/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            await loadTags();
+        } else {
+            alert('削除に失敗しました');
+        }
+    } catch (error) {
+        console.error('Failed to delete tag:', error);
+        alert('削除に失敗しました');
+    }
+};
+
+tagForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const id = document.getElementById('tag-id').value;
+    const data = {
+        name: document.getElementById('tag-name').value,
+        color: document.getElementById('tag-color').value
+    };
+
+    try {
+        const url = id ? `/api/tags/${id}` : '/api/tags';
+        const method = id ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            tagModal.style.display = 'none';
+            await loadTags();
+        } else {
+            alert('保存に失敗しました');
+        }
+    } catch (error) {
+        console.error('Failed to save tag:', error);
+        alert('保存に失敗しました');
+    }
+});
+
+// モーダル共通処理
+document.querySelectorAll('.modal-close').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+    });
+});
+
+document.querySelectorAll('.modal-close-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+    });
+});
+
+window.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal')) {
+        e.target.style.display = 'none';
+    }
+});
+
+// 初期ロード
+loadIngredients();
+loadTags();
+</script>
+{% endblock %}

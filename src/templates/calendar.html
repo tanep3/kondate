@@ -1,0 +1,1125 @@
+{% extends "base.html" %}
+
+{% block title %}カレンダー - 献立システム{% endblock %}
+
+{% block content %}
+<div class="calendar-header">
+    <h1>📅 献立カレンダー</h1>
+    <div class="calendar-navigation">
+        <button id="prev-month" class="btn btn-secondary">◀ 前月</button>
+        <h2 id="current-month"></h2>
+        <button id="next-month" class="btn btn-secondary">翌月 ▶</button>
+    </div>
+</div>
+
+<div class="calendar-container">
+    <div class="calendar-weekdays">
+        <div class="calendar-weekday">日</div>
+        <div class="calendar-weekday">月</div>
+        <div class="calendar-weekday">火</div>
+        <div class="calendar-weekday">水</div>
+        <div class="calendar-weekday">木</div>
+        <div class="calendar-weekday">金</div>
+        <div class="calendar-weekday">土</div>
+    </div>
+    <div id="calendar-days" class="calendar-days">
+        <!-- JavaScriptで生成 -->
+    </div>
+</div>
+
+<!-- 献立追加ダイアログ -->
+<div id="dish-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-date-title">献立を追加</h3>
+            <span class="modal-close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="dish-form">
+                <input type="hidden" id="selected-date">
+                <input type="hidden" id="selected-meal-type" value="dinner">
+
+                <div class="form-group">
+                    <label>食事タイプ</label>
+                    <div class="meal-type-selector">
+                        <button type="button" class="meal-type-btn breakfast" data-meal-type="breakfast">🌅 朝食</button>
+                        <button type="button" class="meal-type-btn lunch" data-meal-type="lunch">☀️ 昼食</button>
+                        <button type="button" class="meal-type-btn dinner active" data-meal-type="dinner">🌙 夕食</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>主食</label>
+                    <div class="dish-search">
+                        <input type="text" id="main-dish-search" class="form-control" placeholder="検索...">
+                        <select id="main-dish" class="form-control" style="display: none;">
+                            <option value="">選択してください</option>
+                        </select>
+                        <div id="main-dish-selected" class="dish-selected" style="display: none;">
+                            <span class="dish-selected-name"></span>
+                            <span class="dish-selected-remove">×</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>副菜1</label>
+                    <div class="dish-search">
+                        <input type="text" id="side-dish-search" class="form-control" placeholder="検索...">
+                        <select id="side-dish" class="form-control" style="display: none;">
+                            <option value="">選択してください</option>
+                        </select>
+                        <div id="side-dish-selected" class="dish-selected" style="display: none;">
+                            <span class="dish-selected-name"></span>
+                            <span class="dish-selected-remove">×</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>副菜2</label>
+                    <div class="dish-search">
+                        <input type="text" id="side2-dish-search" class="form-control" placeholder="検索...">
+                        <select id="side2-dish" class="form-control" style="display: none;">
+                            <option value="">選択してください</option>
+                        </select>
+                        <div id="side2-dish-selected" class="dish-selected" style="display: none;">
+                            <span class="dish-selected-name"></span>
+                            <span class="dish-selected-remove">×</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>汁物</label>
+                    <div class="dish-search">
+                        <input type="text" id="soup-dish-search" class="form-control" placeholder="検索...">
+                        <select id="soup-dish" class="form-control" style="display: none;">
+                            <option value="">選択してください</option>
+                        </select>
+                        <div id="soup-dish-selected" class="dish-selected" style="display: none;">
+                            <span class="dish-selected-name"></span>
+                            <span class="dish-selected-remove">×</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>主食</label>
+                    <div class="dish-search">
+                        <input type="text" id="staple-dish-search" class="form-control" placeholder="検索...">
+                        <select id="staple-dish" class="form-control" style="display: none;">
+                            <option value="">選択してください</option>
+                        </select>
+                        <div id="staple-dish-selected" class="dish-selected" style="display: none;">
+                            <span class="dish-selected-name"></span>
+                            <span class="dish-selected-remove">×</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>デザート</label>
+                    <div class="dish-search">
+                        <input type="text" id="dessert-dish-search" class="form-control" placeholder="検索...">
+                        <select id="dessert-dish" class="form-control" style="display: none;">
+                            <option value="">選択してください</option>
+                        </select>
+                        <div id="dessert-dish-selected" class="dish-selected" style="display: none;">
+                            <span class="dish-selected-name"></span>
+                            <span class="dish-selected-remove">×</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary modal-close-btn">キャンセル</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                    <button type="button" id="delete-calendar-btn" class="btn btn-danger" style="display: none;">削除</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 献立詳細モーダル -->
+<div id="recipe-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="recipe-modal-title">献立詳細</h3>
+            <span class="recipe-modal-close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="recipe-modal-content">
+                <!-- 献立詳細がここに表示されます -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.calendar-navigation {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.calendar-navigation h2 {
+    margin: 0;
+    min-width: 150px;
+    text-align: center;
+}
+
+.calendar-container {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: var(--shadow);
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.calendar-weekday {
+    text-align: center;
+    font-weight: bold;
+    padding: 8px;
+    color: var(--text-secondary);
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.calendar-day {
+    min-height: 100px;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--card-bg);
+}
+
+.calendar-day:hover {
+    background: var(--hover-bg);
+}
+
+.calendar-day.other-month {
+    opacity: 0.3;
+}
+
+.calendar-day.today {
+    border: 2px solid var(--primary-color);
+}
+
+.calendar-day-number {
+    font-weight: bold;
+    margin-bottom: 4px;
+    color: var(--text-primary);
+}
+
+.calendar-day.sunday .calendar-day-number {
+    color: #ff4444;
+}
+
+.calendar-day.saturday .calendar-day-number {
+    color: #4444ff;
+}
+
+.calendar-dishes {
+    font-size: 0.8rem;
+}
+
+.calendar-dish {
+    padding: 2px 4px;
+    margin: 2px 0;
+    border-radius: 3px;
+    background: var(--secondary-bg);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.calendar-dish.main {
+    background: #ffcccc;
+}
+
+.calendar-dish.side {
+    background: #ccffcc;
+}
+
+.calendar-dish.soup {
+    background: #ccccff;
+}
+
+.dark-mode .calendar-dish.main {
+    background: #5c3a3a;
+}
+
+.dark-mode .calendar-dish.side {
+    background: #3a5c3a;
+}
+
+.dark-mode .calendar-dish.soup {
+    background: #3a3a5c;
+}
+
+@media (prefers-color-scheme: dark) {
+    .calendar-dish.main {
+        background: #5c3a3a;
+    }
+
+    .calendar-dish.side {
+        background: #3a5c3a;
+    }
+
+    .calendar-dish.soup {
+        background: #3a3a5c;
+    }
+}
+
+.calendar-nutrition {
+    margin-top: 4px;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    background: var(--primary-bg);
+    border-radius: 3px;
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.calendar-meal {
+    margin-top: 2px;
+    padding: 2px 6px;
+    font-size: 0.8rem;
+    border-radius: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.calendar-meal.breakfast {
+    background: #ffe4b5;
+    color: #8b4513;
+}
+
+.calendar-meal.lunch {
+    background: #87ceeb;
+    color: #00008b;
+}
+
+.calendar-meal.dinner {
+    background: #dda0dd;
+    color: #4b0082;
+}
+
+.dark-mode .calendar-meal.breakfast {
+    background: #5c4a3a;
+    color: #ffe4b5;
+}
+
+.dark-mode .calendar-meal.lunch {
+    background: #3a4c5c;
+    color: #87ceeb;
+}
+
+.dark-mode .calendar-meal.dinner {
+    background: #5c3a5c;
+    color: #dda0dd;
+}
+
+@media (prefers-color-scheme: dark) {
+    .calendar-meal.breakfast {
+        background: #5c4a3a;
+        color: #ffe4b5;
+    }
+
+    .calendar-meal.lunch {
+        background: #3a4c5c;
+        color: #87ceeb;
+    }
+
+    .calendar-meal.dinner {
+        background: #5c3a5c;
+        color: #dda0dd;
+    }
+}
+
+.dish-search {
+    position: relative;
+}
+
+.dish-selected {
+    margin-top: 8px;
+    padding: 8px;
+    background: var(--secondary-bg);
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dish-selected-remove {
+    color: #ff4444;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.dish-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .dish-suggestions {
+    background: #2d2d2d;
+    border: 1px solid #555555;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+    .dish-suggestions {
+        background: #2d2d2d;
+        border: 1px solid #555555;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+}
+
+.dish-suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dish-suggestion-item:hover {
+    background: var(--hover-bg);
+}
+
+.dish-suggestion-item .dish-name {
+    font-weight: bold;
+}
+
+.dish-suggestion-item .dish-type {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.dish-suggestion-item .dish-similarity {
+    font-size: 0.8rem;
+    color: var(--primary-color);
+    float: right;
+}
+
+.meal-type-selector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.meal-type-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.meal-type-btn:hover {
+    border-color: var(--primary-color);
+    background: var(--hover-bg);
+}
+
+.meal-type-btn.active {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: white;
+}
+</style>
+
+<script>
+let currentDate = new Date();
+let calendarData = {};
+
+// カレンダーを描画
+function renderCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    // 月タイトルを更新
+    document.getElementById('current-month').textContent = `${year}年 ${month + 1}月`;
+
+    // 月の最初の日と最後の日を取得
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+
+    // カレンダーの日数を計算（前月分を含める）
+    const startDayOfWeek = firstDay.getDay();
+    const daysInMonth = lastDay.getDate();
+
+    const calendarDays = document.getElementById('calendar-days');
+    calendarDays.innerHTML = '';
+
+    let cellIndex = 0;  // セルインデックスを追跡
+
+    // 前月の日付
+    const prevMonthLastDay = new Date(year, month, 0).getDate();
+    for (let i = startDayOfWeek - 1; i >= 0; i--) {
+        const dayDiv = createDayElement(prevMonthLastDay - i, true, false, cellIndex++);
+        calendarDays.appendChild(dayDiv);
+    }
+
+    // 当月の日付
+    const today = new Date();
+    for (let day = 1; day <= daysInMonth; day++) {
+        const isToday = (
+            day === today.getDate() &&
+            month === today.getMonth() &&
+            year === today.getFullYear()
+        );
+        const dayDiv = createDayElement(day, false, isToday, cellIndex++);
+        
+        // 献立データを追加
+        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        if (calendarData[dateKey]) {
+            const dishesDiv = document.createElement('div');
+            dishesDiv.className = 'calendar-dishes';
+            
+            // 優先順位で献立を表示
+            const priorityOrder = ['breakfast', 'lunch', 'dinner'];
+            
+            priorityOrder.forEach(mealType => {
+                if (calendarData[dateKey][mealType]) {
+                    const mealData = calendarData[dateKey][mealType];
+                    
+                    // 優先順位で献立を探す
+                    const displayPriority = [
+                        { key: 'main', emoji: '🍖' },
+                        { key: 'side', emoji: '🥗' },
+                        { key: 'side2', emoji: '🥗' },
+                        { key: 'soup', emoji: '🍲' },
+                        { key: 'dessert', emoji: '🍰' },
+                        { key: 'staple', emoji: '🍚' }
+                    ];
+                    
+                    for (const item of displayPriority) {
+                        if (mealData[item.key]) {
+                            const mealDiv = document.createElement('div');
+                            mealDiv.className = `calendar-meal ${mealType}`;
+                            
+                            let emoji = '';
+                            if (mealType === 'breakfast') emoji = '🌅 ';
+                            else if (mealType === 'lunch') emoji = '☀️ ';
+                            else if (mealType === 'dinner') emoji = '🌙 ';
+                            
+                            mealDiv.textContent = emoji + item.emoji + ' ' + mealData[item.key].name;
+                            mealDiv.style.cursor = 'pointer';
+                            mealDiv.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                showRecipeModal(mealData[item.key]);
+                            });
+                            dishesDiv.appendChild(mealDiv);
+                            break; // 一つ表示したら次の食事タイプへ
+                        }
+                    }
+                }
+            });
+            
+            // 総栄養データを表示
+            if (calendarData[dateKey].total_nutrition) {
+                const nutritionDiv = document.createElement('div');
+                nutritionDiv.className = 'calendar-nutrition';
+                const nutrition = calendarData[dateKey].total_nutrition;
+                nutritionDiv.textContent = `📊 ${nutrition.calories}kcal | タンパク質${nutrition.protein}g | 塩分${nutrition.sodium}g`;
+                dishesDiv.appendChild(nutritionDiv);
+            }
+            
+            dayDiv.appendChild(dishesDiv);
+        }
+        
+        calendarDays.appendChild(dayDiv);
+    }
+
+    // 翌月の日付
+    const totalCells = Math.ceil((startDayOfWeek + daysInMonth) / 7) * 7;
+    const remainingCells = totalCells - (startDayOfWeek + daysInMonth);
+    for (let day = 1; day <= remainingCells; day++) {
+        const dayDiv = createDayElement(day, true, false, cellIndex++);
+        calendarDays.appendChild(dayDiv);
+    }
+}
+
+function createDayElement(day, isOtherMonth, isToday = false, cellIndex = 0) {
+    const dayDiv = document.createElement('div');
+    dayDiv.className = 'calendar-day';
+    
+    if (isOtherMonth) {
+        dayDiv.classList.add('other-month');
+    }
+    
+    if (isToday) {
+        dayDiv.classList.add('today');
+    }
+
+    const dayOfWeek = (cellIndex % 7);
+    if (dayOfWeek === 0) {
+        dayDiv.classList.add('sunday');
+    } else if (dayOfWeek === 6) {
+        dayDiv.classList.add('saturday');
+    }
+
+    const dayNumber = document.createElement('div');
+    dayNumber.className = 'calendar-day-number';
+    dayNumber.textContent = day;
+    dayDiv.appendChild(dayNumber);
+
+    if (!isOtherMonth) {
+        dayDiv.addEventListener('click', () => {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth() + 1;
+            const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            openModal(dateKey);
+        });
+    }
+
+    return dayDiv;
+}
+
+// モーダル操作
+const modal = document.getElementById('dish-modal');
+const modalCloseBtn = document.querySelector('.modal-close');
+const modalCloseButton = document.querySelector('.modal-close-btn');
+const deleteCalendarBtn = document.getElementById('delete-calendar-btn');
+
+// 選択済み献立を管理する変数
+let selectedDishes = {
+    main: null,
+    side: null,
+    side2: null,
+    soup: null,
+    staple: null,
+    dessert: null
+};
+
+function openModal(dateKey) {
+    document.getElementById('selected-date').value = dateKey;
+    document.getElementById('modal-date-title').textContent = `${dateKey} の献立`;
+    
+    // 食事タイプをリセット（夕食に設定）
+    document.getElementById('selected-meal-type').value = 'dinner';
+    document.querySelectorAll('.meal-type-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector('.meal-type-btn.dinner').classList.add('active');
+    
+    // 既存の献立を選択（夕食をデフォルト）
+    loadMealData(dateKey, 'dinner');
+    
+    modal.style.display = 'block';
+}
+
+function loadMealData(dateKey, mealType) {
+    // 選択済み献立をリセット
+    clearSelectedDish('main');
+    clearSelectedDish('side');
+    clearSelectedDish('side2');
+    clearSelectedDish('soup');
+    clearSelectedDish('staple');
+    clearSelectedDish('dessert');
+    
+    if (calendarData[dateKey] && calendarData[dateKey][mealType]) {
+        const mealData = calendarData[dateKey][mealType];
+        
+        // 主食
+        if (mealData.main) {
+            document.getElementById('main-dish').value = mealData.main.id;
+            showSelectedDish('main', mealData.main.id, mealData.main.name);
+        }
+        
+        // 副菜1
+        if (mealData.side) {
+            document.getElementById('side-dish').value = mealData.side.id;
+            showSelectedDish('side', mealData.side.id, mealData.side.name);
+        }
+        
+        // 副菜2
+        if (mealData.side2) {
+            document.getElementById('side2-dish').value = mealData.side2.id;
+            showSelectedDish('side2', mealData.side2.id, mealData.side2.name);
+        }
+        
+        // 汁物
+        if (mealData.soup) {
+            document.getElementById('soup-dish').value = mealData.soup.id;
+            showSelectedDish('soup', mealData.soup.id, mealData.soup.name);
+        }
+        
+        // 主食
+        if (mealData.staple) {
+            document.getElementById('staple-dish').value = mealData.staple.id;
+            showSelectedDish('staple', mealData.staple.id, mealData.staple.name);
+        }
+        
+        // デザート
+        if (mealData.dessert) {
+            document.getElementById('dessert-dish').value = mealData.dessert.id;
+            showSelectedDish('dessert', mealData.dessert.id, mealData.dessert.name);
+        }
+        
+        // 削除ボタンを表示
+        if (deleteCalendarBtn) {
+            deleteCalendarBtn.style.display = 'inline-block';
+        }
+    } else {
+        // 削除ボタンを非表示
+        if (deleteCalendarBtn) {
+            deleteCalendarBtn.style.display = 'none';
+        }
+    }
+    
+    // 削除ボタンのイベントリスナーを再設定
+    setupRemoveButtons();
+}
+
+async function showRecipeModal(dish) {
+    try {
+        const response = await fetch(`/api/dishes/${dish.id}`);
+        const data = await response.json();
+        
+        const modal = document.getElementById('recipe-modal');
+        const title = document.getElementById('recipe-modal-title');
+        const content = document.getElementById('recipe-modal-content');
+        
+        title.textContent = dish.name;
+        
+        let html = '<div class="recipe-detail">';
+        
+        if (dish.type) {
+            const typeNames = {
+                'main': '主菜',
+                'side': '副菜',
+                'soup': '汁物',
+                'staple': '主食',
+                'dessert': 'デザート'
+            };
+            html += `<p><strong>タイプ:</strong> ${typeNames[dish.type] || dish.type}</p>`;
+        }
+        
+        if (dish.description) {
+            html += `<p><strong>説明:</strong> ${dish.description}</p>`;
+        }
+        
+        html += '<hr>';
+        
+        if (dish.difficulty) {
+            const difficultyNames = {
+                'easy': '簡単',
+                'medium': '普通',
+                'hard': '難しい'
+            };
+            html += `<p><strong>難易度:</strong> ${difficultyNames[dish.difficulty] || dish.difficulty}</p>`;
+        }
+        
+        if (dish.prep_time) {
+            html += `<p><strong>調理時間:</strong> ${dish.prep_time}分</p>`;
+        }
+        
+        if (dish.calories || dish.protein || dish.fat || dish.sodium) {
+            html += '<hr>';
+            html += '<div class="nutrition-info"><strong>栄養情報（1人前）:</strong><ul>';
+            if (dish.calories) html += `<li>カロリー: ${dish.calories}kcal</li>`;
+            if (dish.protein) html += `<li>タンパク質: ${dish.protein}g</li>`;
+            if (dish.fat) html += `<li>脂質: ${dish.fat}g</li>`;
+            if (dish.sodium) html += `<li>塩分: ${dish.sodium}g</li>`;
+            html += '</ul></div>';
+        }
+        
+        if (data.recipe && data.recipe.steps) {
+            html += '<hr>';
+            html += '<div class="recipe-steps"><strong>調理手順:</strong><ol>';
+            data.recipe.steps.forEach(step => {
+                html += `<li>${step}</li>`;
+            });
+            html += '</ol></div>';
+        }
+        
+        if (data.ingredients && data.ingredients.length > 0) {
+            html += '<hr>';
+            html += '<div class="recipe-ingredients"><strong>食材:</strong><ul>';
+            data.ingredients.forEach(item => {
+                const name = item.ingredient.name;
+                const amount = item.amount ? `: ${item.amount}` : '';
+                html += `<li>${name}${amount}</li>`;
+            });
+            html += '</ul></div>';
+        }
+        
+        html += '</div>';
+        
+        content.innerHTML = html;
+        modal.style.display = 'block';
+        
+    } catch (error) {
+        console.error('Failed to load recipe:', error);
+        alert('レシピの読み込みに失敗しました');
+    }
+}
+
+function setupRemoveButtons() {
+    document.querySelectorAll('.dish-selected-remove').forEach(btn => {
+        btn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const selectedDiv = e.target.closest('.dish-selected');
+            const type = selectedDiv.id.replace(/-dish-selected$/, '').replace(/-selected$/, '');
+            clearSelectedDish(type);
+        };
+    });
+}
+
+function showSelectedDish(type, dishId, dishName) {
+    selectedDishes[type] = dishId;
+    document.getElementById(`${type}-dish-search`).style.display = 'none';
+    document.getElementById(`${type}-dish-selected`).style.display = 'flex';
+    const selectedName = document.getElementById(`${type}-dish-selected`).querySelector('.dish-selected-name');
+    selectedName.textContent = dishName;
+    selectedName.style.cursor = 'pointer';
+    selectedName.onclick = async () => {
+        try {
+            const response = await fetch(`/api/dishes/${dishId}`);
+            const dish = await response.json();
+            showRecipeModal(dish);
+        } catch (error) {
+            console.error('Failed to load recipe:', error);
+        }
+    };
+    document.getElementById(`${type}-dish`).value = dishId;
+}
+
+function clearSelectedDish(type) {
+    selectedDishes[type] = null;
+    document.getElementById(`${type}-dish-search`).style.display = 'block';
+    document.getElementById(`${type}-dish-selected`).style.display = 'none';
+    document.getElementById(`${type}-dish-search`).value = '';
+    document.getElementById(`${type}-dish`).value = '';
+}
+
+// 検索機能
+let searchTimeout;
+const dishTypes = ['main', 'side', 'side2', 'soup', 'staple', 'dessert'];
+
+dishTypes.forEach(type => {
+    const searchInput = document.getElementById(`${type}-dish-search`);
+    
+    searchInput.addEventListener('input', async (e) => {
+        clearTimeout(searchTimeout);
+        const query = e.target.value.trim();
+        
+        if (query.length < 2) {
+            removeSuggestions(type);
+            return;
+        }
+        
+        searchTimeout = setTimeout(async () => {
+            await searchDishes(type, query);
+        }, 300);
+    });
+    
+    // 検索窓からフォーカスが外れたら候補を非表示
+    searchInput.addEventListener('blur', () => {
+        setTimeout(() => removeSuggestions(type), 200);
+    });
+});
+
+async function searchDishes(type, query) {
+    try {
+        let dishType = type;
+        if (type === 'side2') {
+            dishType = 'side';
+        }
+        
+        const response = await fetch(`/api/search/dishes?q=${encodeURIComponent(query)}&type=${dishType}`);
+        const data = await response.json();
+        
+        showSuggestions(type, data.items);
+    } catch (error) {
+        console.error('Failed to search dishes:', error);
+    }
+}
+
+function showSuggestions(type, dishes) {
+    removeSuggestions(type);
+    
+    if (dishes.length === 0) {
+        return;
+    }
+    
+    const searchInput = document.getElementById(`${type}-dish-search`);
+    const suggestionsDiv = document.createElement('div');
+    suggestionsDiv.className = 'dish-suggestions';
+    suggestionsDiv.id = `${type}-dish-suggestions`;
+    
+    dishes.forEach(dish => {
+        const item = document.createElement('div');
+        item.className = 'dish-suggestion-item';
+        item.innerHTML = `
+            <span class="dish-name">${dish.name}</span>
+            <span class="dish-similarity">${Math.round(dish.similarity * 100)}%</span>
+        `;
+        item.addEventListener('click', () => {
+            selectDish(type, dish.id, dish.name);
+        });
+        suggestionsDiv.appendChild(item);
+    });
+    
+    searchInput.parentNode.appendChild(suggestionsDiv);
+}
+
+function removeSuggestions(type) {
+    const suggestionsDiv = document.getElementById(`${type}-dish-suggestions`);
+    if (suggestionsDiv) {
+        suggestionsDiv.remove();
+    }
+}
+
+function selectDish(type, dishId, dishName) {
+    showSelectedDish(type, dishId, dishName);
+    removeSuggestions(type);
+    document.getElementById(`${type}-dish-search`).value = '';
+}
+
+function closeModal() {
+    modal.style.display = 'none';
+}
+
+modalCloseBtn.addEventListener('click', closeModal);
+modalCloseButton.addEventListener('click', closeModal);
+
+window.addEventListener('click', (e) => {
+    if (e.target === modal) {
+        closeModal();
+    }
+});
+
+// カレンダーデータをロード
+async function loadCalendarData() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+
+    try {
+        const response = await fetch(`/api/calendar?year=${year}&month=${month}`);
+        const data = await response.json();
+        
+        // 日付ごとに献立をグループ化
+        calendarData = {};
+        data.items.forEach(item => {
+            const dateKey = item.date;
+            if (!calendarData[dateKey]) {
+                calendarData[dateKey] = {
+                    breakfast: null,
+                    lunch: null,
+                    dinner: null,
+                    total_nutrition: null
+                };
+            }
+            
+            // 食事タイプごとに献立データをセット
+            if (item.meal_type === 'breakfast') {
+                calendarData[dateKey].breakfast = item;
+            } else if (item.meal_type === 'lunch') {
+                calendarData[dateKey].lunch = item;
+            } else if (item.meal_type === 'dinner') {
+                calendarData[dateKey].dinner = item;
+            }
+        });
+        
+        // 各日の総栄養データを計算
+        for (const dateKey in calendarData) {
+            const dayData = calendarData[dateKey];
+            let totalCalories = 0;
+            let totalProtein = 0;
+            let totalSodium = 0;
+            
+            ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
+                if (dayData[mealType] && dayData[mealType].nutrition) {
+                    totalCalories += dayData[mealType].nutrition.calories || 0;
+                    totalProtein += dayData[mealType].nutrition.protein || 0;
+                    totalSodium += dayData[mealType].nutrition.sodium || 0;
+                }
+            });
+            
+            dayData.total_nutrition = {
+                calories: Math.round(totalCalories),
+                protein: Math.round(totalProtein * 10) / 10,
+                sodium: Math.round(totalSodium * 10) / 10
+            };
+        }
+        
+        renderCalendar();
+    } catch (error) {
+        console.error('Failed to load calendar data:', error);
+    }
+}
+
+// 献立データをロード
+async function loadDishes() {
+    try {
+        const response = await fetch('/api/dishes');
+        const data = await response.json();
+        
+        const mainSelect = document.getElementById('main-dish');
+        const sideSelect = document.getElementById('side-dish');
+        const side2Select = document.getElementById('side2-dish');
+        const soupSelect = document.getElementById('soup-dish');
+        
+        data.items.forEach(dish => {
+            const option = document.createElement('option');
+            option.value = dish.id;
+            option.textContent = dish.name;
+            
+            if (dish.type === 'main') {
+                mainSelect.appendChild(option);
+            } else if (dish.type === 'side') {
+                sideSelect.appendChild(option.cloneNode(true));
+                side2Select.appendChild(option);
+            } else if (dish.type === 'soup') {
+                soupSelect.appendChild(option);
+            }
+        });
+    } catch (error) {
+        console.error('Failed to load dishes:', error);
+    }
+}
+
+// 献立を保存
+document.getElementById('dish-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const dateKey = document.getElementById('selected-date').value;
+    const mealType = document.getElementById('selected-meal-type').value;
+    
+    const dishIds = [];
+    if (selectedDishes.main) dishIds.push({ dish_id: selectedDishes.main });
+    if (selectedDishes.side) dishIds.push({ dish_id: selectedDishes.side });
+    if (selectedDishes.side2) dishIds.push({ dish_id: selectedDishes.side2 });
+    if (selectedDishes.soup) dishIds.push({ dish_id: selectedDishes.soup });
+    if (selectedDishes.staple) dishIds.push({ dish_id: selectedDishes.staple });
+    if (selectedDishes.dessert) dishIds.push({ dish_id: selectedDishes.dessert });
+    
+    // 既存の献立があるか確認（食事タイプごと）
+    const existingMeal = calendarData[dateKey] && calendarData[dateKey][mealType];
+    const method = existingMeal ? 'PUT' : 'POST';
+    const url = existingMeal ? `/api/calendar/${dateKey}` : '/api/calendar';
+    
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                date: dateKey,
+                meal_type: mealType,
+                dishes: dishIds
+            }),
+        });
+        
+        if (response.ok) {
+            closeModal();
+            await loadCalendarData();
+        } else {
+            alert('献立の保存に失敗しました');
+        }
+    } catch (error) {
+        console.error('Failed to save calendar:', error);
+        alert('献立の保存に失敗しました');
+    }
+});
+
+// 献立を削除
+deleteCalendarBtn.addEventListener('click', async () => {
+    const dateKey = document.getElementById('selected-date').value;
+    const mealType = document.getElementById('selected-meal-type').value;
+    
+    if (!confirm(`${dateKey} の献立を削除しますか？`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/calendar/${dateKey}?meal_type=${mealType}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            closeModal();
+            await loadCalendarData();
+        } else {
+            alert('献立の削除に失敗しました');
+        }
+    } catch (error) {
+        console.error('Failed to delete calendar:', error);
+        alert('献立の削除に失敗しました');
+    }
+});
+
+// 前月/翌月ボタン
+document.getElementById('prev-month').addEventListener('click', () => {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    loadCalendarData();
+});
+
+document.getElementById('next-month').addEventListener('click', () => {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    loadCalendarData();
+});
+
+// 食事タイプボタン
+document.querySelectorAll('.meal-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        // アクティブクラスを切り替え
+        document.querySelectorAll('.meal-type-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // 選択された食事タイプをセット
+        const mealType = btn.dataset.mealType;
+        document.getElementById('selected-meal-type').value = mealType;
+        
+        // その食事タイプの献立データをロード
+        const dateKey = document.getElementById('selected-date').value;
+        loadMealData(dateKey, mealType);
+    });
+});
+
+// レシピモーダルを閉じる
+document.querySelector('.recipe-modal-close').addEventListener('click', () => {
+    document.getElementById('recipe-modal').style.display = 'none';
+});
+
+// 初期ロード
+loadCalendarData();
+loadDishes();
+</script>
+{% endblock %}

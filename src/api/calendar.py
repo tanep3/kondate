@@ -18,6 +18,9 @@ router = APIRouter(prefix="/api/calendar", tags=["calendar"])
 def get_calendar(
     start: Optional[str] = Query(None, description="開始日（ISO 8601）"),
     end: Optional[str] = Query(None, description="終了日（ISO 8601）"),
+    year: Optional[int] = Query(None, description="年"),
+    month: Optional[int] = Query(None, description="月"),
+    date: Optional[str] = Query(None, description="日付（ISO 8601）"),
     db: Session = Depends(get_db)
 ):
     """
@@ -25,11 +28,43 @@ def get_calendar(
 
     - **start**: 開始日（指定しない場合は今日）
     - **end**: 終了日（指定しない場合は7日後）
+    - **year**: 年（指定すると月間カレンダーを返す）
+    - **month**: 月（指定すると月間カレンダーを返す）
+    - **date**: 日付（指定するとその日の3食を返す）
     """
     service = CalendarService(db)
 
+    # 特定の日付の3食を取得
+    if date:
+        calendars = service.get_by_date_all_meals(date)
+        items = [service.to_detail_dict(c) for c in calendars]
+        
+        # 3食の総栄養データを計算
+        total_calories = sum(item.get("nutrition", {}).get("calories", 0) for item in items)
+        total_protein = sum(item.get("nutrition", {}).get("protein", 0) for item in items)
+        total_sodium = sum(item.get("nutrition", {}).get("sodium", 0) for item in items)
+        
+        return {
+            "date": date,
+            "meals": items,
+            "total_nutrition": {
+                "calories": round(total_calories, 1),
+                "protein": round(total_protein, 1),
+                "sodium": round(total_sodium, 1)
+            }
+        }
+
+    # 月間カレンダー
+    if year and month:
+        from datetime import datetime, timedelta
+        import calendar
+        
+        start = f"{year}-{month:02d}-01"
+        last_day = calendar.monthrange(year, month)[1]
+        end = f"{year}-{month:02d}-{last_day:02d}"
+
     # デフォルト値設定
-    if not start:
+    elif not start:
         from datetime import datetime, timedelta
         start = (datetime.now() + timedelta(hours=9)).strftime("%Y-%m-%d")  # JST
     if not end:
@@ -45,27 +80,63 @@ def get_calendar(
     return {"start": start, "end": end, "items": items}
 
 
+@router.post("")
+def create_calendar(
+    data: CalendarCreate,
+    db: Session = Depends(get_db)
+):
+    """
+    カレンダーを作成
+
+    - **date**: 日付（ISO 8601形式: YYYY-MM-DD）
+    - **meal_type**: 食事タイプ（breakfast, lunch, dinner）
+    - **dishes**: 献立リスト（dish_idのペア）
+    """
+    service = CalendarService(db)
+
+    # 既存チェック
+    existing = service.get_by_date(data.date, data.meal_type)
+    if existing:
+        # 既存の場合は更新
+        return service.to_detail_dict(service.update(data.date, data.meal_type, data))
+
+    calendar = service.create(data.date, data)
+    return service.to_detail_dict(calendar)
+
+
 @router.get("/{date}")
 def get_calendar_by_date(
     date: str,
     db: Session = Depends(get_db)
 ):
     """
-    日付でカレンダーを取得
+    日付でカレンダーを取得（3食）
 
     - **date**: 日付（ISO 8601形式: YYYY-MM-DD）
     """
     service = CalendarService(db)
-    calendar = service.get_by_date(date)
+    calendars = service.get_by_date_all_meals(date)
 
-    if not calendar:
-        return {"date": date, "main": None, "side1": None, "side2": None, "soup": None}
-
-    return service.to_detail_dict(calendar)
+    items = [service.to_detail_dict(c) for c in calendars]
+    
+    # 3食の総栄養データを計算
+    total_calories = sum(item.get("nutrition", {}).get("calories", 0) for item in items)
+    total_protein = sum(item.get("nutrition", {}).get("protein", 0) for item in items)
+    total_sodium = sum(item.get("nutrition", {}).get("sodium", 0) for item in items)
+    
+    return {
+        "date": date,
+        "meals": items,
+        "total_nutrition": {
+            "calories": round(total_calories, 1),
+            "protein": round(total_protein, 1),
+            "sodium": round(total_sodium, 1)
+        }
+    }
 
 
 @router.post("/{date}")
-def create_calendar(
+def create_calendar_by_date(
     date: str,
     data: CalendarCreate,
     db: Session = Depends(get_db)
@@ -74,15 +145,13 @@ def create_calendar(
     カレンダーを作成
 
     - **date**: 日付（ISO 8601形式: YYYY-MM-DD）
-    - **main_dish_id**: 主菜ID
-    - **side1_dish_id**: 副菜1 ID
-    - **side2_dish_id**: 副菜2 ID
-    - **soup_dish_id**: 汁物ID
+    - **meal_type**: 食事タイプ（breakfast, lunch, dinner）
+    - **dishes**: 献立リスト
     """
     service = CalendarService(db)
 
     # 既存チェック
-    existing = service.get_by_date(date)
+    existing = service.get_by_date(date, data.meal_type)
     if existing:
         raise HTTPException(status_code=400, detail="既に登録されています")
 
@@ -94,6 +163,7 @@ def create_calendar(
 def update_calendar(
     date: str,
     data: CalendarUpdate,
+    meal_type: str = Query("dinner", description="食事タイプ"),
     db: Session = Depends(get_db)
 ):
     """
@@ -102,7 +172,12 @@ def update_calendar(
     全フィールドがオプションです。指定したフィールドのみ更新されます。
     """
     service = CalendarService(db)
-    calendar = service.update(date, data)
+    
+    # meal_typeをdataから取得
+    if data.meal_type:
+        meal_type = data.meal_type
+    
+    calendar = service.update(date, meal_type, data)
 
     if not calendar:
         raise HTTPException(status_code=404, detail="カレンダーが見つかりません")
@@ -110,18 +185,19 @@ def update_calendar(
     return service.to_detail_dict(calendar)
 
 
-@router.delete("/{date}", status_code=204)
+@router.delete("/{date}")
 def delete_calendar(
     date: str,
+    meal_type: str = Query("dinner", description="食事タイプ"),
     db: Session = Depends(get_db)
 ):
     """
     カレンダーを削除
     """
     service = CalendarService(db)
-    success = service.delete(date)
+    success = service.delete(date, meal_type)
 
     if not success:
         raise HTTPException(status_code=404, detail="カレンダーが見つかりません")
 
-    return None
+    return {"success": True}

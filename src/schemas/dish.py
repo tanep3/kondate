@@ -13,6 +13,8 @@ class DishType(str, Enum):
     MAIN = "main"
     SIDE = "side"
     SOUP = "soup"
+    STAPLE = "staple"
+    DESSERT = "dessert"
 
 
 class Difficulty(str, Enum):

@@ -15,7 +15,7 @@ import os
 from src.database import get_db
 
 # APIルーターをインポート
-from src.api import dishes, search, suggest, calendar
+from src.api import dishes, search, suggest, calendar, ingredients, tags
 
 # アプリケーション作成
 app = FastAPI(
@@ -54,6 +54,8 @@ app.include_router(dishes.router)
 app.include_router(search.router)
 app.include_router(suggest.router)
 app.include_router(calendar.router)
+app.include_router(ingredients.router)
+app.include_router(tags.router)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -129,6 +131,18 @@ async def dish_edit(dish_id: int, request: Request, db: Session = Depends(get_db
             "dish_id": dish_id
         }
     )
+
+
+@app.get("/calendar", response_class=HTMLResponse)
+async def calendar_page(request: Request):
+    """カレンダーページ"""
+    return templates.TemplateResponse("calendar.html", {"request": request})
+
+
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_page(request: Request):
+    """管理ページ"""
+    return templates.TemplateResponse("admin.html", {"request": request})
 
 
 @app.get("/health")

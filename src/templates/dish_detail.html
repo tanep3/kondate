@@ -85,7 +85,7 @@
                 <ul>
                     {% if dish.ingredients %}
                     {% for ing in dish.ingredients %}
-                    <li>{{ ing.amount }} {{ ing.ingredient.name if ing.ingredient else '' }}</li>
+                    <li>{{ ing.ingredient.name if ing.ingredient else '' }} {{ ing.amount }}</li>
                     {% endfor %}
                     {% endif %}
                 </ul>

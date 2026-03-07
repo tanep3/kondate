@@ -12,9 +12,11 @@ from src.database import Base
 
 class DishType(str, enum.Enum):
     """献立タイプ"""
-    MAIN = "main"      # 主菜
-    SIDE = "side"      # 副菜
-    SOUP = "soup"      # 汁物
+    MAIN = "main"           # 主菜
+    SIDE = "side"           # 副菜
+    SOUP = "soup"           # 汁物
+    STAPLE = "staple"       # 主食（ごはん、パン、麺など）
+    DESSERT = "dessert"     # デザート
 
 
 class Difficulty(str, enum.Enum):

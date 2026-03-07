@@ -18,7 +18,7 @@ class Recipe(Base):
     dish_id = Column(Integer, ForeignKey("dishes.id", ondelete="CASCADE"), nullable=False, unique=True)
 
     # 調理手順（JSON配列）
-    steps = Column(Text, nullable=False)  # JSON文字列で保存
+    steps = Column(Text, nullable=True)  # JSON文字列で保存
 
     # コツ・ヒント
     tips = Column(Text, nullable=True)
