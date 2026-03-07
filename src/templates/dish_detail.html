@@ -119,7 +119,7 @@
             <h3>タグ</h3>
             <div class="dish-tags">
                 {% for tag in dish.tags %}
-                <span class="tag">#{{ tag.name }}</span>
+                <span class="tag clickable-tag" data-tag="{{ tag.name }}">#{{ tag.name }}</span>
                 {% endfor %}
             </div>
         </div>
@@ -220,6 +220,17 @@ function getDifficultyLabel(difficulty) {
 // ページ読み込み時に関連献立をロード
 document.addEventListener('DOMContentLoaded', function() {
     loadRelatedDishes();
+    
+    // タグクリックイベント
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('clickable-tag')) {
+            const tag = e.target.dataset.tag;
+            // セッションストレージに検索クエリを保存
+            sessionStorage.setItem('tagSearch', `#${tag}`);
+            // 献立一覧に遷移
+            window.location.href = '/';
+        }
+    });
 });
 // 献立削除確認
 function confirmDelete(dishId) {

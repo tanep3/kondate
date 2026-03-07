@@ -5,11 +5,14 @@
 {% block content %}
 <div class="container">
     <div class="page-header">
-        <h2>献立一覧</h2>
-        <div class="search-box">
-            <input type="text" id="search-input" placeholder="🔍 献立名や食材で検索...">
-            <button id="search-button" class="btn-secondary">検索</button>
+        <div>
+            <h2>献立一覧</h2>
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="🔍 献立名や食材で検索...">
+                <button id="search-button" class="btn-secondary">検索</button>
+            </div>
         </div>
+        <a href="/dishes/new" class="btn-primary">➕ 新規作成</a>
     </div>
 
     <div class="tabs">
@@ -37,7 +40,19 @@ let currentType = 'all';
 
 // ページ読み込み時に献立一覧を取得
 document.addEventListener('DOMContentLoaded', function() {
-    loadDishes();
+    // セッションストレージからタグ検索を取得
+    const tagSearch = sessionStorage.getItem('tagSearch');
+    if (tagSearch) {
+        // 検索ボックスに値をセット
+        document.getElementById('search-input').value = tagSearch;
+        // 検索を実行
+        performSearch(tagSearch);
+        // セッションストレージをクリア
+        sessionStorage.removeItem('tagSearch');
+    } else {
+        // 通常ロード
+        loadDishes();
+    }
 });
 
 // 献立一覧を取得
