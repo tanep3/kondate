@@ -229,7 +229,7 @@ main {
 .nutrition-item {
     display: flex;
     flex-direction: column;
-    padding: 1rem;
+    padding: 0.8rem;
     background-color: var(--background-color);
     border-radius: 6px;
     border: 1px solid var(--border-color);
@@ -305,6 +305,7 @@ main {
     gap: 0.5rem;
     margin-bottom: 2rem;
     border-bottom: 2px solid var(--border-color);
+    flex-wrap: wrap;
 }
 
 .tab {
@@ -317,6 +318,9 @@ main {
     font-weight: 500;
     color: var(--text-color);
     transition: all 0.3s;
+    flex: 1;
+    min-width: 120px;
+    text-align: center;
 }
 
 .tab:hover {
@@ -339,9 +343,11 @@ main {
     background-color: var(--card-background);
     border: 2px solid var(--border-color);
     border-radius: 8px;
-    padding: 1.5rem;
+    padding: 1.0rem;
     cursor: pointer;
     transition: all 0.3s;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .dish-card:hover {
@@ -390,6 +396,18 @@ main {
     border: 1px solid #64B5F6;
 }
 
+.dish-badge.type-staple {
+    background-color: #FCE4EC;
+    color: #C2185B;
+    border: 1px solid #F06292;
+}
+
+.dish-badge.type-dessert {
+    background-color: #F3E5F5;
+    color: #7B1FA2;
+    border: 1px solid #BA68C8;
+}
+
 /* ダークテーマでのバッジ調整 */
 @media (prefers-color-scheme: dark) {
     .dish-badge.type-main {
@@ -408,6 +426,18 @@ main {
         background-color: #2b323d;
         color: #90caf9;
         border-color: #64b5f6;
+    }
+    
+    .dish-badge.type-staple {
+        background-color: #3d2b35;
+        color: #f48fb1;
+        border-color: #f06292;
+    }
+    
+    .dish-badge.type-dessert {
+        background-color: #352b3d;
+        color: #ce93d8;
+        border-color: #ba68c8;
     }
 }
 
@@ -429,6 +459,18 @@ body.dark-mode .dish-badge.type-soup {
     border-color: #64b5f6;
 }
 
+body.dark-mode .dish-badge.type-staple {
+    background-color: #3d2b35;
+    color: #f48fb1;
+    border-color: #f06292;
+}
+
+body.dark-mode .dish-badge.type-dessert {
+    background-color: #352b3d;
+    color: #ce93d8;
+    border-color: #ba68c8;
+}
+
 .dish-nutrition {
     display: flex;
     gap: 1rem;
@@ -439,6 +481,7 @@ body.dark-mode .dish-badge.type-soup {
 .nutrition-item {
     display: flex;
     align-items: center;
+    padding: 0.8rem;
     gap: 0.25rem;
 }
 
@@ -492,7 +535,7 @@ footer p {
 @media (max-width: 768px) {
     /* フォントサイズを大きくする */
     html {
-        font-size: 18px; /* 基本フォントサイズを16px→18pxに */
+        font-size: 20px; /* 基本フォントサイズを16px→20pxに */
     }
     
     body {
@@ -543,12 +586,41 @@ footer p {
 
     .dishes-grid {
         grid-template-columns: 1fr;
+        gap: 1rem;
+        margin: 0;
+        padding: 0;
     }
-
+    
+    /* メインタブを2〜3段表示 */
+    .tabs {
+        gap: 0.5rem;
+    }
+    
+    .tab {
+        flex: 1 1 calc(50% - 0.5rem); /* 2段表示 */
+        min-width: calc(50% - 0.5rem);
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem; /* 18px */
+    }
+    
     main {
         padding: 0 1rem;
     }
     
+    /* コンテナのパディング調整 */
+    .container {
+        padding: 1rem 0.5rem;
+        margin: 0 0.2rem;
+    }
+    
+    main {
+        padding: 0 0.5rem;
+    }
+    
+    .dish-card {
+        padding: 1.0rem;
+    }
+
     /* 献立カードのフォントサイズ */
     .dish-card h3 {
         font-size: 1.3rem; /* 23.4px */
@@ -766,4 +838,91 @@ footer p {
     font-weight: 600;
     text-align: center;
     margin-bottom: 0.5rem;
+}
+
+/* エラーメッセージ */
+.error-message {
+    background-color: var(--danger-color);
+    color: white;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* エラー状態 */
+.error-state {
+    background-color: var(--danger-color);
+    color: white;
+    padding: 2rem;
+    border-radius: 8px;
+}
+
+.error-detail {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin: 1rem 0;
+}
+
+/* ローディングスピナー */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 3rem;
+}
+
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-left-color: var(--primary-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ページネーション */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+#page-info {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+/* フォーカス時のスタイル */
+.dish-card:focus {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+button:focus,
+a:focus,
+input:focus,
+select:focus {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
 }

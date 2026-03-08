@@ -116,9 +116,11 @@ class DishService:
 
         # レシピを作成
         if dish_data.recipe:
+            # stepsがNoneまたは空の場合は空のJSONにする
+            steps = dish_data.recipe.steps if dish_data.recipe.steps else []
             recipe = Recipe(
                 dish_id=dish.id,
-                steps=json.dumps(dish_data.recipe.steps, ensure_ascii=False),
+                steps=json.dumps(steps, ensure_ascii=False),
                 tips=dish_data.recipe.tips
             )
             self.db.add(recipe)

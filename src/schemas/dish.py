@@ -71,7 +71,7 @@ class IngredientCreate(BaseModel):
 
 class RecipeCreate(BaseModel):
     """レシピ作成スキーマ"""
-    steps: List[str] = Field(..., description="調理手順")
+    steps: Optional[List[str]] = Field(None, description="調理手順")
     tips: Optional[str] = Field(None, description="コツ・ヒント")
 
 

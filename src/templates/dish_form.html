@@ -9,6 +9,9 @@
         <a href="/" class="btn-secondary">← 戻る</a>
     </div>
 
+    <!-- エラーメッセージ表示エリア -->
+    <div id="error-message" class="error-message" style="display: none;"></div>
+
     <form id="dishForm" class="dish-form">
         <input type="hidden" id="dishId" value="{{ dish_id or '' }}">
 
@@ -229,6 +232,20 @@ document.getElementById('add-ingredient').addEventListener('click', () => addIng
 document.getElementById('dishForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    // バリデーション
+    const name = document.getElementById('name').value.trim();
+    const type = document.getElementById('type').value;
+
+    if (!name) {
+        showErrorMessage('献立名を入力してください');
+        return;
+    }
+
+    if (!type) {
+        showErrorMessage('献立タイプを選択してください');
+        return;
+    }
+
     // 手順を収集
     const stepTextareas = document.querySelectorAll('.step-text');
     steps = Array.from(stepTextareas).map(ta => ta.value).filter(s => s.trim());
@@ -282,15 +299,31 @@ document.getElementById('dishForm').addEventListener('submit', async (e) => {
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorData = await response.json().catch(() => null);
+            if (errorData && errorData.detail) {
+                throw new Error(errorData.detail);
+            }
+            throw new Error(`保存に失敗しました (Status: ${response.status})`);
         }
 
         const result = await response.json();
         window.location.href = `/dishes/${result.id}`;
     } catch (error) {
-        alert(`エラー: ${error.message}`);
+        showErrorMessage(error.message);
     }
 });
+
+// エラーメッセージを表示
+function showErrorMessage(message) {
+    const errorDiv = document.getElementById('error-message');
+    errorDiv.textContent = `❌ ${message}`;
+    errorDiv.style.display = 'block';
+    
+    // 3秒後に自動的に消す
+    setTimeout(() => {
+        errorDiv.style.display = 'none';
+    }, 5000);
+}
 
 // 既存の献立データを読み込む
 async function loadDishData() {

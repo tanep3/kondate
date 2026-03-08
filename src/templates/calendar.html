@@ -163,12 +163,21 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.calendar-header h1 {
+    flex: 1;
+    min-width: 100%;
 }
 
 .calendar-navigation {
     display: flex;
     align-items: center;
     gap: 1rem;
+    width: 100%;
+    justify-content: center;
 }
 
 .calendar-navigation h2 {
@@ -929,6 +938,13 @@ async function loadCalendarData() {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth() + 1;
 
+    // ローディング表示
+    document.getElementById('calendar-days').innerHTML = `
+        <div class="loading" style="grid-column: 1 / -1;">
+            <div class="spinner"></div>
+        </div>
+    `;
+
     try {
         const response = await fetch(`/api/calendar?year=${year}&month=${month}`);
         const data = await response.json();
@@ -981,6 +997,14 @@ async function loadCalendarData() {
         renderCalendar();
     } catch (error) {
         console.error('Failed to load calendar data:', error);
+        const errorMessage = error.message || 'ネットワークエラーが発生しました';
+        document.getElementById('calendar-days').innerHTML = `
+            <div class="calendar-error" style="grid-column: 1 / -1; padding: 2rem;">
+                <p>❌ カレンダーの読み込みに失敗しました</p>
+                <p class="error-detail">${errorMessage}</p>
+                <button onclick="loadCalendarData()" class="btn-primary">再読み込み</button>
+            </div>
+        `;
     }
 }
 
@@ -1011,6 +1035,8 @@ async function loadDishes() {
         });
     } catch (error) {
         console.error('Failed to load dishes:', error);
+        const errorMessage = error.message || 'ネットワークエラーが発生しました';
+        alert(`献立データの読み込みに失敗しました\n\n${errorMessage}\n\nページを再読み込みしてください`);
     }
 }
 
@@ -1051,11 +1077,13 @@ document.getElementById('dish-form').addEventListener('submit', async (e) => {
             closeModal();
             await loadCalendarData();
         } else {
-            alert('献立の保存に失敗しました');
+            const errorData = await response.json().catch(() => null);
+            const errorMessage = errorData && errorData.detail ? errorData.detail : '献立の保存に失敗しました';
+            alert(`❌ ${errorMessage}`);
         }
     } catch (error) {
         console.error('Failed to save calendar:', error);
-        alert('献立の保存に失敗しました');
+        alert(`❌ 献立の保存に失敗しました\n\n${error.message}`);
     }
 });
 
