@@ -18,8 +18,9 @@ COPY pyproject.toml ./
 COPY uv.lock ./
 
 # 依存関係のインストール（BuildKit cacheを使用）
+# Python 3.11を明示的に指定
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+    uv sync --frozen --no-dev --python 3.11
 
 # ソースコードのコピー
 COPY . .
