@@ -1,15 +1,24 @@
+version: '3.8'
+
+# BuildKitを明示的に有効化（Linuxユーザー向け）
+x-buildkit: &buildkit
+  environment:
+    - DOCKER_BUILDKIT=1
+    - COMPOSE_DOCKER_CLI_BUILD=1
+
 services:
   kondate:
     build:
       context: .
       dockerfile: Dockerfile
+    <<: *buildkit
     container_name: kondate
     ports:
       - "10141:10141"
     volumes:
       # データ永続化
       - ./datas:/app/datas
-      # uvキャッシュ（ビルド高速化）
+      # uvキャッシュ（BuildKit cacheで高速化）
       - uv-cache:/root/.cache/uv
     environment:
       - TZ=Asia/Tokyo

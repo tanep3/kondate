@@ -17,8 +17,9 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 COPY pyproject.toml ./
 COPY uv.lock ./
 
-# 依存関係のインストール（uvキャッシュ効率化）
-RUN uv sync --frozen --no-dev
+# 依存関係のインストール（BuildKit cacheを使用）
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 
 # ソースコードのコピー
 COPY . .
