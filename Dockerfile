@@ -38,5 +38,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # ポート公開
 EXPOSE 10141
 
-# 起動コマンド
-CMD ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "10141"]
+# 起動コマンド（仮想環境を再作成しない）
+CMD [".venv/bin/uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "10141"]
