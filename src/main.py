@@ -12,7 +12,10 @@ from sqlalchemy.orm import Session
 import os
 
 # データベース接続をインポート
-from src.database import get_db
+from src.database import engine, Base, get_db
+
+# モデルをインポート（必須：テーブル作成のため）
+from src.models import dish, recipe, calendar  # noqa: F401
 
 # APIルーターをインポート
 from src.api import dishes, search, suggest, calendar, nutrition
@@ -23,6 +26,9 @@ app = FastAPI(
     description="血栓の病気を考慮した献立管理・提案システム",
     version="1.0.0"
 )
+
+# テーブル作成（初回起動時のみ）
+Base.metadata.create_all(bind=engine)
 
 # テンプレート・静的ファイル設定
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

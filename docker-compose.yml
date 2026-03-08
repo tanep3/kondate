@@ -1,5 +1,3 @@
-version: '3.8'
-
 # BuildKitを明示的に有効化（Linuxユーザー向け）
 x-buildkit: &buildkit
   environment:
