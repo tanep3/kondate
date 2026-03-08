@@ -63,13 +63,13 @@ def get_calendar(
         last_day = calendar.monthrange(year, month)[1]
         end = f"{year}-{month:02d}-{last_day:02d}"
 
-    # デフォルト値設定
-    elif not start:
+    # デフォルト値設定（startとendが指定されていない場合のみ）
+    else:
         from datetime import datetime, timedelta
-        start = (datetime.now() + timedelta(hours=9)).strftime("%Y-%m-%d")  # JST
-    if not end:
-        from datetime import datetime, timedelta
-        end = (datetime.now() + timedelta(days=7, hours=9)).strftime("%Y-%m-%d")  # JST
+        if not start:
+            start = (datetime.now() + timedelta(hours=9)).strftime("%Y-%m-%d")  # JST
+        if not end:
+            end = (datetime.now() + timedelta(days=7, hours=9)).strftime("%Y-%m-%d")  # JST
 
     calendars = service.get_by_date_range(start, end)
 
@@ -80,7 +80,7 @@ def get_calendar(
     return {"start": start, "end": end, "items": items}
 
 
-@router.post("")
+@router.post("", status_code=201)
 def create_calendar(
     data: CalendarCreate,
     db: Session = Depends(get_db)
@@ -97,8 +97,10 @@ def create_calendar(
     # 既存チェック
     existing = service.get_by_date(data.date, data.meal_type)
     if existing:
-        # 既存の場合は更新
-        return service.to_detail_dict(service.update(data.date, data.meal_type, data))
+        raise HTTPException(
+            status_code=409,
+            detail=f"{data.date}の{data.meal_type}は既に登録されています。更新するにはPUTメソッドを使用してください。"
+        )
 
     calendar = service.create(data.date, data)
     return service.to_detail_dict(calendar)

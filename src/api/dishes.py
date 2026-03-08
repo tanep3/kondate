@@ -166,3 +166,61 @@ def delete_dish(
         raise HTTPException(status_code=404, detail="献立が見つかりません")
 
     return None
+
+
+@router.post("/bulk", response_model=dict)
+def create_dishes_bulk(
+    dishes_data: dict,
+    db: Session = Depends(get_db)
+):
+    """
+    献立を一括作成
+
+    - **dishes**: 献立リスト（最大5000件）
+    """
+    if "dishes" not in dishes_data:
+        raise HTTPException(status_code=400, detail="dishesフィールドが必須です")
+    
+    dishes_list = dishes_data["dishes"]
+    
+    if len(dishes_list) > 5000:
+        raise HTTPException(status_code=400, detail="最大5000件まで登録できます")
+    
+    service = DishService(db)
+    created_dishes = []
+    failed_dishes = []
+    
+    for i, dish_data in enumerate(dishes_list):
+        try:
+            # dictをDishCreateに変換
+            dish_create = DishCreate(**dish_data)
+            dish = service.create(dish_create)
+            
+            dish_dict = dish.to_dict()
+            if dish.recipe:
+                dish_dict["recipe"] = dish.recipe.to_dict()
+            if dish.ingredients:
+                dish_dict["ingredients"] = [di.to_dict() for di in dish.ingredients]
+            if dish.tags:
+                dish_dict["tags"] = [dt.tag.to_dict() for dt in dish.tags]
+            
+            created_dishes.append({
+                "index": i,
+                "dish_id": dish.id,
+                "name": dish.name,
+                "type": dish.type
+            })
+        except Exception as e:
+            failed_dishes.append({
+                "index": i,
+                "name": dish_data.get("name", "Unknown"),
+                "error": str(e)
+            })
+    
+    return {
+        "total": len(dishes_list),
+        "created": len(created_dishes),
+        "failed": len(failed_dishes),
+        "created_dishes": created_dishes,
+        "failed_dishes": failed_dishes
+    }

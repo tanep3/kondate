@@ -142,9 +142,9 @@ function displayDishes(dishes, showSimilarity = false) {
             </div>
             ${dish.good_for_brain_health ? '<p class="good-for-brain">✓ 血栓の病気に良い</p>' : ''}
             <div class="dish-nutrition">
-                ${dish.calories ? `<div class="nutrition-item">🔥 ${dish.calories}kcal</div>` : ''}
-                ${dish.protein ? `<div class="nutrition-item">💪 ${dish.protein}g</div>` : ''}
-                ${dish.sodium ? `<div class="nutrition-item">🧂 ${dish.sodium}g</div>` : ''}
+                ${dish.calories && dish.servings ? `<div class="nutrition-item">🔥 ${Math.round(dish.calories / dish.servings)}kcal</div>` : ''}
+                ${dish.protein && dish.servings ? `<div class="nutrition-item">💪 ${Math.round(dish.protein / dish.servings)}g</div>` : ''}
+                ${dish.sodium && dish.servings ? `<div class="nutrition-item">🧂 ${Math.round(dish.sodium / dish.servings)}g</div>` : ''}
             </div>
             ${dish.tags && dish.tags.length > 0 ? `
                 <div class="dish-tags">

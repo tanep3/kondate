@@ -1,8 +1,16 @@
 # 要件定義書: Kondate - 献立管理システム
 
 **バージョン:** 1.0  
-**作成日:** 2025-01-23  
+**作成日:** 2026-03-08  
 **作成者:** Amaterasu(OpenClaw) & Tane Channel Technology
+
+---
+
+## 変更履歴
+
+| 日付 | バージョン | 変更内容 |
+|------|-----------|----------|
+| 2026-03-08 | 1.0 | 初版 |
 
 ---
 
@@ -35,10 +43,11 @@
 #### 2.1.1 献立・レシピ管理
 
 **献立データ:**
-- 主菜、副菜、汁物のカテゴリ分け
-- 各献立の基本情報（名前、説明、難易度、調理時間）
-- 栄養情報（タンパク質量、カロリー、塩分、脂質）
+- 5種類の献立タイプ（主菜、副菜、汁物、主食、デザート）
+- 各献立の基本情報（名前、説明、難易度、調理時間、人数）
+- 栄養情報（総量: タンパク質量、カロリー、塩分、脂質）
 - 血栓の病気に良いかどうかのフラグ
+- タグ管理（フリーフォーマット入力）
 
 **レシピデータ:**
 - 材料と分量（正規化された食材マスターと紐付け）
@@ -88,10 +97,12 @@
 
 #### 2.1.6 カレンダー機能
 
-**週間献立カレンダー:**
-- 1週間の献立を表示・登録
-- 日付ごとの献立（朝・昼・夕の区分は将来的な拡張）
+**1日3食カレンダー:**
+- 1日の献立を3食（朝食・昼食・夕食）で管理
+- 日付ごとの献立（主菜、副菜1、副菜2、汁物、主食、デザート）
 - カレンダーから献立を選んで詳細表示
+- 1日分の総栄養表示（カロリー、タンパク質、塩分）
+- **人数考慮:** レシピの人数で栄養情報を1人前に換算
 
 ---
 
@@ -211,15 +222,16 @@ kondate update dish --id 1 --add-ingredient "卵"
 |------|------|------|------|
 | id | Integer | ✓ | 主キー |
 | name | String | ✓ | 献立名 |
-| type | Enum | ✓ | main（主菜）/side（副菜）/soup（汁物） |
-| description | Text | | 説明 |
-| difficulty | Enum | | easy/medium/hard |
-| prep_time | Integer | | 調理時間（分） |
-| calories | Float | | カロリー（kcal/人前） |
-| protein | Float | | タンパク質（g/人前） |
-| fat | Float | | 脂質（g/人前） |
-| sodium | Float | | 塩分（g/人前） |
-| good_for_blood_health | Boolean | | 血栓の病気に良いかどうか |
+| type | Enum | ✓ | main（主菜）/side（副菜）/soup（汁物）/staple（主食）/dessert（デザート） |
+| description | Text | ✓ | 説明 |
+| difficulty | Enum | ✓ | easy/medium/hard |
+| prep_time | Integer | ✓ | 調理時間（分） |
+| servings | Integer | ✓ | 人数（デフォルト2） |
+| calories | Float | ✓ | カロリー（kcal/総量） |
+| protein | Float | ✓ | タンパク質（g/総量） |
+| fat | Float | ✓ | 脂質（g/総量） |
+| sodium | Float | ✓ | 塩分（g/総量） |
+| good_for_brain_health | Boolean | | 血栓の病気に良いかどうか |
 | created_at | DateTime | ✓ | 作成日時 |
 | updated_at | DateTime | ✓ | 更新日時 |
 
@@ -229,8 +241,9 @@ kondate update dish --id 1 --add-ingredient "卵"
 |------|------|------|------|
 | id | Integer | ✓ | 主キー |
 | dish_id | Integer | ✓ | 外部キー（dishes.id） |
+| ingredients | Text | ✓ | 材料（テキスト形式） |
 | steps | JSON | ✓ | 調理手順 |
-| tips | Text | | コツ・ヒント |
+| tips | Text | ✓ | コツ・ヒント |
 
 #### 4.1.3 食材（Ingredients）
 
@@ -271,10 +284,16 @@ kondate update dish --id 1 --add-ingredient "卵"
 |------|------|------|------|
 | id | Integer | ✓ | 主キー |
 | date | Date | ✓ | 日付 |
+| meal_type | String | ✓ | 食事タイプ（breakfast/lunch/dinner） |
 | main_dish_id | Integer | | 外部キー（dishes.id） |
 | side1_dish_id | Integer | | 外部キー（dishes.id） |
 | side2_dish_id | Integer | | 外部キー（dishes.id） |
 | soup_dish_id | Integer | | 外部キー（dishes.id） |
+| staple_dish_id | Integer | | 外部キー（dishes.id） |
+| dessert_dish_id | Integer | | 外部キー（dishes.id） |
+
+**制約:**
+- `date + meal_type` の組み合わせは一意
 
 ---
 
@@ -347,10 +366,18 @@ kondate update dish --id 1 --add-ingredient "卵"
 
 | メソッド | エンドポイント | 説明 |
 |---------|---------------|------|
-| GET | /api/calendar?start={date}&end={date} | カレンダー取得 |
-| POST | /api/calendar/{date} | カレンダー登録 |
-| PUT | /api/calendar/{date} | カレンダー更新 |
-| DELETE | /api/calendar/{date} | カレンダー削除 |
+| GET | /api/calendar?start={date}&end={date} | カレンダー取得（日付範囲） |
+| GET | /api/calendar?year={year}&month={month} | カレンダー取得（月間） |
+| GET | /api/calendar?date={date} | 1日分の3食を取得 |
+| GET | /api/calendar/{date} | 日付でカレンダーを取得（3食） |
+| POST | /api/calendar | カレンダー登録（既存の場合409 Conflict） |
+| PUT | /api/calendar/{date}?meal_type={type} | カレンダー更新 |
+| DELETE | /api/calendar/{date}?meal_type={type} | カレンダー削除 |
+
+**エラーハンドリング:**
+- **409 Conflict:** 既存登録時にPOSTを試みた場合
+  - エラーメッセージ: "{date}の{meal_type}は既に登録されています。更新するにはPUTメソッドを使用してください。"
+  - クライアントはユーザー確認後、PUTで更新
 
 #### 5.1.5 食材・タグ
 

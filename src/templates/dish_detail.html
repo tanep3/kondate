@@ -45,29 +45,30 @@
 
         <div class="nutrition-section">
             <h3>栄養情報（1人前あたり）</h3>
+            <p class="servings-info">👥 {{ dish.servings }}人前のレシピから算出</p>
             <div class="nutrition-grid">
                 {% if dish.calories is not none %}
                 <div class="nutrition-item">
                     <span class="label">カロリー</span>
-                    <span class="value">{{ dish.calories }}kcal</span>
+                    <span class="value">{{ (dish.calories / dish.servings)|round(1) }}kcal</span>
                 </div>
                 {% endif %}
                 {% if dish.protein is not none %}
                 <div class="nutrition-item">
                     <span class="label">タンパク質</span>
-                    <span class="value">{{ dish.protein }}g</span>
+                    <span class="value">{{ (dish.protein / dish.servings)|round(1) }}g</span>
                 </div>
                 {% endif %}
                 {% if dish.fat is not none %}
                 <div class="nutrition-item">
                     <span class="label">脂質</span>
-                    <span class="value">{{ dish.fat }}g</span>
+                    <span class="value">{{ (dish.fat / dish.servings)|round(1) }}g</span>
                 </div>
                 {% endif %}
                 {% if dish.sodium is not none %}
                 <div class="nutrition-item">
                     <span class="label">塩分</span>
-                    <span class="value">{{ dish.sodium }}g</span>
+                    <span class="value">{{ (dish.sodium / dish.servings)|round(1) }}g</span>
                 </div>
                 {% endif %}
             </div>

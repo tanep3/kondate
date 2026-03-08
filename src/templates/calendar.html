@@ -550,7 +550,8 @@ function renderCalendar() {
                             mealDiv.style.cursor = 'pointer';
                             mealDiv.addEventListener('click', (e) => {
                                 e.stopPropagation();
-                                showRecipeModal(mealData[item.key]);
+                                // 献立追加ダイアログを開いて、該当する食事タイプタブを選択
+                                openModalWithMealType(dateKey, mealType);
                             });
                             dishesDiv.appendChild(mealDiv);
                             break; // 一つ表示したら次の食事タイプへ
@@ -636,21 +637,27 @@ let selectedDishes = {
 };
 
 function openModal(dateKey) {
+    openModalWithMealType(dateKey, 'dinner');
+}
+
+function openModalWithMealType(dateKey, mealType) {
     document.getElementById('selected-date').value = dateKey;
     document.getElementById('modal-date-title').textContent = `${dateKey} の献立`;
     
-    // 食事タイプをリセット（夕食に設定）
-    document.getElementById('selected-meal-type').value = 'dinner';
+    // 食事タイプを設定
+    document.getElementById('selected-meal-type').value = mealType;
     document.querySelectorAll('.meal-type-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelector('.meal-type-btn.dinner').classList.add('active');
+    document.querySelector(`.meal-type-btn.${mealType}`).classList.add('active');
     
-    // 既存の献立を選択（夕食をデフォルト）
-    loadMealData(dateKey, 'dinner');
+    // 既存の献立を選択
+    loadMealData(dateKey, mealType);
     
     modal.style.display = 'block';
 }
 
 function loadMealData(dateKey, mealType) {
+    console.log('[DEBUG] loadMealData called:', { dateKey, mealType, calendarData: calendarData[dateKey] });
+    
     // 選択済み献立をリセット
     clearSelectedDish('main');
     clearSelectedDish('side');
@@ -660,6 +667,8 @@ function loadMealData(dateKey, mealType) {
     clearSelectedDish('dessert');
     
     if (calendarData[dateKey] && calendarData[dateKey][mealType]) {
+        console.log('[DEBUG] Meal data found:', calendarData[dateKey][mealType]);
+        
         const mealData = calendarData[dateKey][mealType];
         
         // 主食

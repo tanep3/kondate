@@ -15,7 +15,7 @@ import os
 from src.database import get_db
 
 # APIルーターをインポート
-from src.api import dishes, search, suggest, calendar
+from src.api import dishes, search, suggest, calendar, nutrition
 
 # アプリケーション作成
 app = FastAPI(
@@ -56,6 +56,7 @@ app.include_router(dishes.router)
 app.include_router(search.router)
 app.include_router(suggest.router)
 app.include_router(calendar.router)
+app.include_router(nutrition.router)
 
 
 @app.get("/", response_class=HTMLResponse)

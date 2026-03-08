@@ -38,11 +38,11 @@ class Dish(Base):
     difficulty = Column(Enum(Difficulty), nullable=True)
     prep_time = Column(Integer, nullable=True)  # 調理時間（分）
 
-    # 栄養情報（1人前）
-    calories = Column(Float, nullable=True)     # カロリー（kcal/1人前）
-    protein = Column(Float, nullable=True)      # タンパク質（g/1人前）
-    fat = Column(Float, nullable=True)          # 脂質（g/1人前）
-    sodium = Column(Float, nullable=True)       # 塩分（g/1人前）
+    # 栄養情報（総量）
+    calories = Column(Float, nullable=True)     # カロリー（kcal/総量）
+    protein = Column(Float, nullable=True)      # タンパク質（g/総量）
+    fat = Column(Float, nullable=True)          # 脂質（g/総量）
+    sodium = Column(Float, nullable=True)       # 塩分（g/総量）
 
     # レシピ情報
     servings = Column(Integer, nullable=False, default=2)  # 人数（デフォルト2人前）

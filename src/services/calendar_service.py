@@ -199,6 +199,21 @@ class CalendarService:
         self.db.commit()
         return True
 
+    def _calculate_per_serving(self, value: float, servings: int) -> float:
+        """
+        1人前の値を計算
+
+        Args:
+            value: 総量（カロリー、タンパク質、塩分など）
+            servings: 人数
+
+        Returns:
+            1人前の値
+        """
+        if servings and servings > 0:
+            return round(value / servings, 1)
+        return value
+
     def to_detail_dict(self, calendar: Calendar) -> dict:
         """
         詳細辞書形式に変換（献立情報付き）
@@ -234,12 +249,21 @@ class CalendarService:
                 dish_dict = dish.to_dict() if dish else None
                 
                 if dish_dict:
+                    # 人数を取得（デフォルトは1人前）
+                    servings = dish.servings if dish.servings and dish.servings > 0 else 1
+                    
+                    # 栄養情報を1人前に換算
                     if dish.calories:
-                        total_calories += dish.calories
+                        total_calories += self._calculate_per_serving(dish.calories, servings)
                     if dish.protein:
-                        total_protein += dish.protein
+                        total_protein += self._calculate_per_serving(dish.protein, servings)
                     if dish.sodium:
-                        total_sodium += dish.sodium
+                        total_sodium += self._calculate_per_serving(dish.sodium, servings)
+                    
+                    # 献立辞書にも1人前の栄養情報をセット
+                    dish_dict["calories"] = self._calculate_per_serving(dish.calories, servings) if dish.calories else None
+                    dish_dict["protein"] = self._calculate_per_serving(dish.protein, servings) if dish.protein else None
+                    dish_dict["sodium"] = self._calculate_per_serving(dish.sodium, servings) if dish.sodium else None
                 
                 if key == "side1":
                     result["side"] = dish_dict
