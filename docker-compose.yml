@@ -1,0 +1,32 @@
+services:
+  kondate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kondate
+    ports:
+      - "10141:10141"
+    volumes:
+      # データ永続化
+      - ./datas:/app/datas
+      # uvキャッシュ（ビルド高速化）
+      - uv-cache:/root/.cache/uv
+    environment:
+      - TZ=Asia/Tokyo
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10141/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  uv-cache:
+    driver: local
+
+# ネットワーク（オプション）
+# networks:
+#   default:
+#     name: kondate-network
