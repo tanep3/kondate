@@ -29,6 +29,13 @@ COPY . .
 RUN mkdir -p datas/chroma && \
     chmod 777 datas/chroma
 
+# ruriキャッシュディレクトリの作成
+RUN mkdir -p .cache && \
+    chmod 777 .cache
+
+# データベース初期化
+RUN python scripts/init_db.py
+
 # 環境変数
 ENV PYTHONUNBUFFERED=1
 ENV API_PORT=10141

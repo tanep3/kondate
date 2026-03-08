@@ -20,6 +20,8 @@ services:
       - ./datas:/app/datas
       # uvキャッシュ（BuildKit cacheで高速化）
       - uv-cache:/root/.cache/uv
+      # ruriキャッシュ（エンベディングモデル）
+      - ruri-cache:/app/.cache
     environment:
       - TZ=Asia/Tokyo
       - PYTHONUNBUFFERED=1
@@ -33,6 +35,8 @@ services:
 
 volumes:
   uv-cache:
+    driver: local
+  ruri-cache:
     driver: local
 
 # ネットワーク（オプション）
